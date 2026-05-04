@@ -156,3 +156,42 @@ function formatLastSeen(ts) {
 function escapeHtml(str) {
   return str.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[c]);
 }
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js');
+}
+
+let deferredPrompt;
+const isFirstVisit = !localStorage.getItem("pwaDismissed");
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  if (isFirstVisit) showInstallBanner();
+});
+
+function showInstallBanner() {
+  if (!isFirstVisit) return;
+  const banner = document.createElement("div");
+  banner.id = "pwa-banner";
+  banner.innerHTML = `
+    <div class="pwa-content">
+      <span>📱 Install Chat App for better experience</span>
+      <button id="pwa-install">Install</button>
+      <button id="pwa-dismiss">✕</button>
+    </div>
+  `;
+  document.body.appendChild(banner);
+  document.getElementById("pwa-install").onclick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      localStorage.setItem("pwaDismissed", "true");
+      banner.remove();
+    }
+  };
+  document.getElementById("pwa-dismiss").onclick = () => {
+    localStorage.setItem("pwaDismissed", "true");
+    banner.remove();
+  };
+}

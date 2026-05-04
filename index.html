@@ -1,97 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pulse Chat</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <!-- ─── Login Overlay ─── -->
-    <div id="login-overlay">
-      <div class="login-card">
-        <div class="login-logo">
-          <span class="logo-dot"></span>
-          <span class="logo-text">pulse</span>
-        </div>
-        <p class="login-subtitle">Real-time chat. No noise.</p>
-        <div class="input-group">
-          <input
-            id="username-input"
-            type="text"
-            placeholder="Your name..."
-            maxlength="24"
-            autocomplete="off"
-            spellcheck="false"
-          />
-          <button id="join-btn">Join →</button>
-        </div>
-        <p class="login-hint">Press Enter or click Join</p>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chat App</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="login-overlay">
+    <div class="login-card">
+      <h2>Chat App</h2>
+      <input id="username-input" placeholder="Enter your name" autocomplete="off" />
+      <button id="join-btn">Join</button>
+    </div>
+  </div>
+
+  <div id="app" class="hidden">
+    <aside id="sidebar">
+      <div class="sidebar-header">
+        <span>Users</span>
+        <span id="user-count">0</span>
       </div>
-    </div>
+      <ul id="user-list"></ul>
+    </aside>
 
-    <!-- ─── Main Chat App ─── -->
-    <div id="app" class="hidden">
-      <!-- Left Sidebar: Active Users -->
-      <aside id="sidebar">
-        <div class="sidebar-header">
-          <span class="sidebar-title">Online</span>
-          <span id="user-count" class="user-count">0</span>
-        </div>
-        <ul id="user-list"></ul>
-      </aside>
+    <main id="chat-area">
+      <header id="chat-header">
+        <span id="header-username"></span>
+      </header>
+      <div id="messages-container">
+        <div id="messages"></div>
+      </div>
+      <div id="input-bar">
+        <input type="file" id="image-input" accept="image/*" style="display:none" />
+        <button id="image-btn">📎</button>
+        <input id="message-input" placeholder="Type a message" autocomplete="off" />
+        <button id="send-btn">Send</button>
+      </div>
+    </main>
+  </div>
 
-      <!-- Right: Chat Area -->
-      <main id="chat-area">
-        <header id="chat-header">
-          <div class="header-left">
-            <span class="header-hash">#</span>
-            <span class="header-channel">general</span>
-          </div>
-          <div class="header-right">
-            <span id="header-username" class="header-me"></span>
-          </div>
-        </header>
-
-        <div id="messages-container">
-          <div id="messages"></div>
-        </div>
-
-        <div id="input-bar">
-          <button id="image-btn" title="Send image">📎</button>
-          <input
-            id="message-input"
-            type="text"
-            placeholder="Message #general"
-            maxlength="500"
-            autocomplete="off"
-            spellcheck="false"
-          />
-          <button id="send-btn">
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <line x1="22" y1="2" x2="11" y2="13"></line>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-            </svg>
-          </button>
-        </div>
-      </main>
-    </div>
-
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="client.js"></script>
-  </body>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="client.js"></script>
+</body>
 </html>

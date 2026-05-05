@@ -45,6 +45,24 @@ mongoose.connect(process.env.MONGO_URI || "mongodb+srv://prateek:test12345@clust
 console.log("=== SERVER STARTING ===");
 console.log("Server will listen on port:", process.env.PORT || 8080);
 
+// Periodic cleanup for stale connections (mark offline after 2 minutes of no activity)
+setInterval(async () => {
+  try {
+    const twoMinutesAgo = new Date(Date.now() - 120000);
+    const result = await User.updateMany(
+      { isOnline: true, lastSeen: { $lt: twoMinutesAgo } },
+      { isOnline: false }
+    );
+    if (result.modifiedCount > 0) {
+      const users = await User.find({});
+      const onlineUsers = users.filter(u => u.isOnline === true);
+      io.emit("users:update", onlineUsers);
+    }
+  } catch (err) {
+    console.error("Cleanup error:", err.message);
+  }
+}, 30000);
+
 io.on("connection", (socket) => {
   console.log("=== SERVER: User connected:", socket.id);
 
@@ -65,7 +83,8 @@ io.on("connection", (socket) => {
       socket.username = username;
 
       const users = await User.find({});
-      io.emit("users:update", users);
+      const onlineUsers = users.filter(u => u.isOnline === true);
+      io.emit("users:update", onlineUsers);
 
       const messages = await Message.find({}).sort({ timestamp: 1 });
       const messagesWithUsername = messages.map(m => {
@@ -156,16 +175,20 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("disconnect", async () => {
+  socket.on("disconnect", async (reason) => {
+    console.log("=== SERVER: User disconnected:", socket.deviceId, "reason:", reason);
     if (socket.deviceId) {
       try {
         await User.findOneAndUpdate(
           { deviceId: socket.deviceId },
           { isOnline: false, lastSeen: new Date() }
         );
-        io.emit("users:update", await User.find({}));
+        const users = await User.find({});
+        const onlineUsers = users.filter(u => u.isOnline === true);
+        io.emit("users:update", onlineUsers);
       } catch (err) {
-        io.emit("users:update", [{ deviceId: socket.deviceId, username: socket.username, isOnline: false }]);
+        console.error("Error on disconnect:", err.message);
+        io.emit("users:update", []);
       }
     }
   });

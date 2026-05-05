@@ -91,20 +91,16 @@
           alert("Please enter your name");
           return;
         }
-        try {
-          console.log("Emitting user:join with:", { deviceId: myDeviceId, username: name });
-          socket.emit("user:join", { deviceId: myDeviceId, username: name });
-          console.log("Socket emit done");
-          document.getElementById("header-username").textContent = name;
-          console.log("Hiding overlay");
-          loginOverlay.style.display = "none";
-          console.log("Showing app");
-          app.style.display = "flex";
-          console.log("App should be visible now");
-          messageInput.focus();
-        } catch (e) {
-          console.error("Join error:", e);
-        }
+        console.log("About to emit user:join with:", { deviceId: myDeviceId, username: name });
+        socket.emit("user:join", { deviceId: myDeviceId, username: name });
+        console.log("Emit returned");
+        document.getElementById("header-username").textContent = name;
+        console.log("Set username");
+        loginOverlay.style.display = "none";
+        console.log("Hidden overlay");
+        app.style.display = "flex";
+        console.log("Shown app - DONE!");
+        messageInput.focus();
       }
 
       joinBtn.addEventListener("click", joinChat);

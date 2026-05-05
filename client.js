@@ -223,6 +223,10 @@ function clearReply() {
   if (preview) preview.classList.add("hidden");
 }
 
+// Expose to global for onclick handlers
+window.setReply = setReply;
+window.clearReply = clearReply;
+
 /* ── Render a chat message ──────────────────────────────────────── */
 function renderMessage(msg) {
   if (!msg) return;
@@ -314,10 +318,12 @@ function renderMessage(msg) {
 
   const actions = document.createElement("div");
   actions.className = "msg-actions";
-  const escapedText = esc(text).replace(/'/g, "\\'").replace(/\n/g, "\\n");
+  const msgId = msg._id;
+  const safeUsername = sender.replace(/'/g, "\\'");
+  const safeText = text.replace(/'/g, "\\'").replace(/\n/g, "\\n");
   actions.innerHTML = `
     ${canDelete ? `<button class="delete-btn" onclick="deleteMessage('${msg._id}')" title="Delete">🗑️</button>` : ''}
-    <button class="reply-btn" onclick="setReply('${msg._id}', '${esc(sender)}', '${escapedText}')" title="Reply">↳</button>
+    <button class="reply-btn" onclick="setReply('${msgId}', '${safeUsername}', '${safeText}')" title="Reply">↳</button>
     <button class="reaction-btn" onclick="addReaction('${msg._id}', '👍')">👍</button>
     <button class="reaction-btn" onclick="addReaction('${msg._id}', '❤️')">❤️</button>
     <button class="reaction-btn" onclick="addReaction('${msg._id}', '😂')">😂</button>
@@ -411,9 +417,13 @@ function sendMessage() {
 
   const payload = { text };
   if (replyTo) {
-    payload.replyTo = { id: replyTo.id, username: replyTo.username, text: replyTo.text };
+    console.log("Sending reply:", replyTo);
+    payload.replyTo = replyTo;
+  } else {
+    payload.replyTo = null;
   }
 
+  console.log("Full payload:", payload);
   socket.emit("message:send", payload);
   clearReply();
   messageInput.value = "";
@@ -424,12 +434,7 @@ sendBtn.addEventListener("click", sendMessage);
 messageInput.addEventListener("keydown", e => { if (e.key === "Enter") sendMessage(); });
 
 /* ── Cancel reply ─────────────────────────────────────────────────── */
-(function initCancelReply() {
-  const cancelBtn = document.getElementById("cancel-reply");
-  if (cancelBtn) {
-    cancelBtn.addEventListener("click", clearReply);
-  }
-})();
+document.getElementById("cancel-reply").addEventListener("click", clearReply);
 
 /* ── Image send ─────────────────────────────────────────────────── */
 imageBtn.addEventListener("click", () => imageInput.click());

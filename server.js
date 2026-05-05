@@ -115,6 +115,7 @@ io.on("connection", (socket) => {
       });
       const msgToSend = message.toObject();
       msgToSend.username = msgToSend.senderName;
+      msgToSend.deliveredTo = [];
       io.emit("message:new", msgToSend);
     } catch (err) {
       console.error("Database error on message send:", err.message);
@@ -127,7 +128,8 @@ io.on("connection", (socket) => {
         username: socket.username,
         type: "chat",
         timestamp: new Date(),
-        replyTo: data.replyTo || null
+        replyTo: data.replyTo || null,
+        deliveredTo: []
       };
       io.emit("message:new", message);
     }
@@ -201,6 +203,32 @@ io.on("connection", (socket) => {
       };
       io.emit("message:new", message);
     }
+  });
+
+  socket.on("message:delivered", async ({ messageId }) => {
+    try {
+      const message = await Message.findById(messageId);
+      if (message && !message.deliveredTo.includes(socket.deviceId)) {
+        message.deliveredTo.push(socket.deviceId);
+        await message.save();
+        const msgToSend = message.toObject();
+        msgToSend.username = msgToSend.senderName;
+        socket.to(message.senderDeviceId).emit("message:delivered", { messageId });
+      }
+    } catch (err) {}
+  });
+
+  socket.on("message:seen", async ({ messageId }) => {
+    try {
+      const message = await Message.findById(messageId);
+      if (message && !message.seenBy.includes(socket.deviceId)) {
+        message.seenBy.push(socket.deviceId);
+        await message.save();
+        const msgToSend = message.toObject();
+        msgToSend.username = msgToSend.senderName;
+        socket.to(message.senderDeviceId).emit("message:seen", { messageId });
+      }
+    } catch (err) {}
   });
 
   socket.on("disconnect", async (reason) => {

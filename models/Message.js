@@ -15,6 +15,7 @@ const messageSchema = new mongoose.Schema({
   type: { type: String, enum: ["chat", "image"], default: "chat" },
   imageUrl: { type: String },
   seenBy: [{ type: String }],
+  deliveredTo: [{ type: String }],
   reactions: { type: mongoose.Schema.Types.Mixed, default: {} },
   replyTo: replySchema
 });

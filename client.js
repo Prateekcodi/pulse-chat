@@ -252,6 +252,19 @@ function createMessageElement(msg) {
     body.appendChild(img);
   }
 
+  const status = document.createElement("span");
+  status.className = "msg-status";
+  const deliveredCount = (msg.deliveredTo || []).length;
+  const seenCount = (msg.seenBy || []).length;
+  if (seenCount > 0) {
+    status.innerHTML = '<span style="color:#5ac8fa;">✓✓</span>';
+  } else if (deliveredCount > 0) {
+    status.innerHTML = '<span style="color:#888;">✓✓</span>';
+  } else if (isMine) {
+    status.innerHTML = '<span style="color:#666;">✓</span>';
+  }
+  meta.appendChild(status);
+
   wrap.appendChild(body);
   return wrap;
 }
@@ -378,6 +391,19 @@ function renderMessage(msg) {
     
     body.appendChild(img);
   }
+
+  const status = document.createElement("span");
+  status.className = "msg-status";
+  const deliveredCount = (msg.deliveredTo || []).length;
+  const seenCount = (msg.seenBy || []).length;
+  if (seenCount > 0) {
+    status.innerHTML = '<span style="color:#5ac8fa;">✓✓</span>';
+  } else if (deliveredCount > 0) {
+    status.innerHTML = '<span style="color:#888;">✓✓</span>';
+  } else if (isMine) {
+    status.innerHTML = '<span style="color:#666;">✓</span>';
+  }
+  meta.appendChild(status);
 
   const actions = document.createElement("div");
   actions.className = "msg-actions";
@@ -545,7 +571,22 @@ socket.on("messages:loadmore", ({ messages, hasMore }) => {
   hasMoreMessages = hasMore;
 });
 
-socket.on("message:new", msg => renderMessage(msg));
+socket.on("message:new", msg => {
+  renderMessage(msg);
+  if (msg.senderDeviceId !== myDeviceId) {
+    socket.emit("message:delivered", { messageId: msg._id });
+  }
+});
+
+socket.on("message:delivered", ({ messageId }) => {
+  const el = document.querySelector(`[data-id="${messageId}"] .msg-status`);
+  if (el) el.innerHTML = '<span style="color:#888;">✓✓</span>';
+});
+
+socket.on("message:seen", ({ messageId }) => {
+  const el = document.querySelector(`[data-id="${messageId}"] .msg-status`);
+  if (el) el.innerHTML = '<span style="color:#5ac8fa;">✓✓</span>';
+});
 
 socket.on("message:edited", msg => {
   const el = document.querySelector(`[data-id="${msg._id}"] .msg-text`);
@@ -670,7 +711,30 @@ messagesWrap.addEventListener("scroll", () => {
     isLoadingMessages = true;
     socket.emit("message:loadmore", { before: oldestMessageTime });
   }
+  
+  if (!intersectionObserver) {
+    intersectionObserver = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const msgId = entry.target.dataset.id;
+          const msgDeviceId = entry.target.dataset.deviceId;
+          if (msgDeviceId && msgDeviceId !== myDeviceId) {
+            socket.emit("message:seen", { messageId: msgId });
+            const el = entry.target.querySelector(".msg-status");
+            if (el) el.innerHTML = '<span style="color:#5ac8fa;">✓✓</span>';
+          }
+        }
+      });
+    }, { threshold: 0.8 });
+  }
+  
+  document.querySelectorAll(".msg:not(.observed)").forEach(el => {
+    el.classList.add("observed");
+    intersectionObserver.observe(el);
+  });
 });
+
+let intersectionObserver = null;
 
 /* ── Scroll Controller ─────────────────────────────────────────────── */
 (function initScrollController() {

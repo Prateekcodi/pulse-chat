@@ -86,24 +86,19 @@ io.on("connection", (socket) => {
   });
 
   socket.on("message:send", async (data) => {
-    console.log("SERVER RECEIVE message:send", data);
     try {
-      const messageData = {
+      const message = await Message.create({
         text: data.text,
         senderDeviceId: socket.deviceId,
         senderName: socket.username,
         type: "chat",
         replyTo: data.replyTo || null
-      };
-      console.log("SERVER CREATING MESSAGE with data:", messageData);
-      const message = await Message.create(messageData);
-      console.log("SERVER MESSAGE CREATED:", message._id, "replyTo:", message.replyTo);
+      });
       const msgToSend = message.toObject();
       msgToSend.username = msgToSend.senderName;
       io.emit("message:new", msgToSend);
     } catch (err) {
-      console.error("SERVER ERROR creating message:", err.message);
-      console.log("SERVER FALLBACK message:", data);
+      console.error("Database error on message send:", err.message);
       const message = {
         _id: Date.now().toString(),
         id: Date.now().toString(),

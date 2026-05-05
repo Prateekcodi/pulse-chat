@@ -417,13 +417,9 @@ function sendMessage() {
 
   const payload = { text };
   if (replyTo) {
-    console.log("Sending reply:", replyTo);
     payload.replyTo = replyTo;
-  } else {
-    payload.replyTo = null;
   }
 
-  console.log("Full payload:", payload);
   socket.emit("message:send", payload);
   clearReply();
   messageInput.value = "";

@@ -790,7 +790,24 @@ html, body {
   object-fit: cover;
   display: block;
   transition: transform var(--t-mid) var(--ease-out);
+  filter: blur(8px) brightness(0.7);
 }
+
+.image-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--mint);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+}
+
 .msg-image:hover { transform: scale(1.015); }
 
 /* ══════════════════ INPUT BAR ══════════════════════════════════════ */

@@ -192,10 +192,29 @@ function renderMessage(msg) {
     img.alt = "Shared image";
     img.loading = "lazy";
     img.style.cursor = "pointer";
+    img.dataset.viewed = "false";
+    
+    const overlay = document.createElement("div");
+    overlay.className = "image-overlay";
+    overlay.innerHTML = "🔒 Tap to view (protected)";
+    
+    const imgContainer = document.createElement("div");
+    imgContainer.style.position = "relative";
+    imgContainer.appendChild(img);
+    imgContainer.appendChild(overlay);
+    
     img.onclick = () => {
-      window.open(imageUrl, "_blank");
+      if (img.dataset.viewed === "false") {
+        img.dataset.viewed = "true";
+        overlay.style.display = "none";
+        img.style.filter = "none";
+        socket.emit("image:seen", msg._id);
+      } else {
+        window.open(imageUrl, "_blank");
+      }
     };
-    body.appendChild(img);
+    
+    body.appendChild(imgContainer);
   }
 
   wrap.appendChild(body);

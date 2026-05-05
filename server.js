@@ -166,6 +166,22 @@ io.on("connection", (socket) => {
       }
     }
   });
+
+  socket.on("image:seen", async (msgId) => {
+    try {
+      const message = await Message.findById(msgId);
+      if (message && message.type === "image") {
+        await Message.findByIdAndDelete(msgId);
+        io.emit("message:deleted", msgId);
+      }
+    } catch (err) {
+      const idx = messages.findIndex(m => m.id === msgId || m._id === msgId);
+      if (idx !== -1) {
+        messages.splice(idx, 1);
+        io.emit("message:deleted", msgId);
+      }
+    }
+  });
 });
 
 const PORT = process.env.PORT || 8080;

@@ -1,4 +1,4 @@
-const socket = io();
+const socket = io({ path: "/socket.io" });
 
 let myDeviceId = localStorage.getItem("deviceId");
 if (!myDeviceId) {

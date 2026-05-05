@@ -14,17 +14,23 @@ const io = new Server(server, {
   pingInterval: 25000
 });
 
-// Serve static files with CSP headers
+// CSP headers for socket.io
 app.use((req, res, next) => {
   res.setHeader(
     "Content-Security-Policy",
-    "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval' data: blob:; style-src * 'unsafe-inline' data: blob:;"
+    "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval' data: blob:; style-src * 'unsafe-inline' data: blob:; img-src * data: blob:;"
   );
   next();
 });
 
-app.use(express.static(path.join(__dirname)));
+// Serve static files
+app.use(express.static(__dirname));
 app.use(express.json({ limit: "10mb" }));
+
+// Fallback route for SPA
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
 
 mongoose.connect(process.env.MONGO_URI || "mongodb+srv://prateek:test12345@cluster0.d63q5xw.mongodb.net/chat?retryWrites=true&w=majority", {
   serverSelectionTimeoutMS: 5000,

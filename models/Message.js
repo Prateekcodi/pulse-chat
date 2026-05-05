@@ -6,7 +6,7 @@ const messageSchema = new mongoose.Schema({
   senderName: { type: String, required: true },
   timestamp: { type: Date, default: Date.now },
   edited: { type: Boolean, default: false },
-  type: { type: String, enum: ["text", "image"], default: "text" },
+  type: { type: String, enum: ["chat", "image"], default: "chat" },
   imageUrl: { type: String },
   seenBy: [{ type: String }]
 });

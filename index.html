@@ -46,7 +46,7 @@
    <script>
      // Debug: Check if script loaded
      console.log("=== CHAT APP DEBUG START ===");
-     console.log("Socket.IO version:", io ? io.version : "not loaded");
+     console.log("Socket.IO loaded:", typeof io);
      console.log("Document readyState:", document.readyState);
 
      const socket = io({ transports: ["websocket", "polling"] });
@@ -95,9 +95,8 @@
          return;
        }
 
-       function joinChat() {
-         debugger;
-         console.log("=== JOIN CLICKED ===");
+function joinChat() {
+          console.log("=== JOIN CLICKED ===");
          const name = usernameInput.value.trim();
          console.log("Username entered:", name);
          if (!name) {
@@ -125,7 +124,6 @@
        });
 
        function sendMessage() {
-         debugger;
          console.log("=== SEND CLICKED ===");
          const text = messageInput.value.trim();
          console.log("Message text:", text);
@@ -168,7 +166,6 @@
        });
 
        socket.on("users:update", function(users) {
-         debugger;
          console.log("=== USERS UPDATE ===", users);
          if (userCountEl) userCountEl.textContent = users.length;
          if (userList) {
@@ -186,12 +183,14 @@
          console.error("SOCKET CONNECT ERROR (dom ready):", err.message);
        });
 
-       function renderMessage(msg) {
+function renderMessage(msg) {
          console.log("Rendering message:", msg);
          const div = document.createElement("div");
          div.className = "msg";
-         div.dataset.id = msg._id;
-         div.innerHTML = '<div class="msg-header">' + msg.senderName + '</div> <div>' + msg.text + '</div>';
+         div.dataset.id = msg._id || msg.id;
+         const senderName = msg.senderName || msg.username || "Unknown";
+         const text = msg.text || "";
+         div.innerHTML = '<div class="msg-header">' + senderName + '</div> <div>' + text + '</div>';
          messagesEl.appendChild(div);
          messagesContainer.scrollTop = messagesContainer.scrollHeight;
        }

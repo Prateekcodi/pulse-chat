@@ -9,7 +9,9 @@ const Message = require("./models/Message");
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { origin: "*", methods: ["GET", "POST"] }
+  cors: { origin: "*", methods: ["GET", "POST"] },
+  pingTimeout: 60000,
+  pingInterval: 25000
 });
 
 app.use(express.static(__dirname));
@@ -23,9 +25,10 @@ mongoose.connect(process.env.MONGO_URI || "mongodb+srv://prateek:test12345@clust
 });
 
 io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
+  console.log("User connected:", socket.id, "from", socket.handshake.address);
 
   socket.on("user:join", async ({ deviceId, username }) => {
+    console.log("User joining:", username, "deviceId:", deviceId);
     try {
       let user = await User.findOne({ deviceId });
       if (user) {
@@ -44,9 +47,9 @@ io.on("connection", (socket) => {
 
       const messages = await Message.find({}).sort({ timestamp: 1 });
       socket.emit("messages:history", messages);
+      console.log("User joined successfully:", username);
     } catch (err) {
       console.error("Database error on user join:", err.message);
-      // Fallback: basic functionality without persistence
       socket.deviceId = deviceId;
       socket.username = username;
       io.emit("users:update", [{ deviceId, username, isOnline: true, lastSeen: new Date() }]);

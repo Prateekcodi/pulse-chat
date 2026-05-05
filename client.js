@@ -1,10 +1,29 @@
-const socket = io();
+const socket = io({ transports: ["websocket"] });
+
+console.log("client.js loaded, socket created");
 
 let myDeviceId = localStorage.getItem("deviceId");
 if (!myDeviceId) {
   myDeviceId = crypto.randomUUID();
   localStorage.setItem("deviceId", myDeviceId);
 }
+
+socket.on("connect", () => {
+  console.log("Socket connected:", socket.id);
+});
+
+socket.on("connect_error", (err) => {
+  console.error("Socket connection error:", err.message);
+  alert("Failed to connect to server. Please refresh the page.");
+});
+
+socket.on("disconnect", (reason) => {
+  console.log("Socket disconnected:", reason);
+});
+
+socket.on("connect_timeout", (timeout) => {
+  console.error("Connection timeout:", timeout);
+});
 
 const loginOverlay = document.getElementById("login-overlay");
 const usernameInput = document.getElementById("username-input");
@@ -23,7 +42,16 @@ const headerUsername = document.getElementById("header-username");
 function joinChat() {
   const name = usernameInput.value.trim();
   if (!name) return;
-  socket.emit("user:join", { deviceId: myDeviceId, username: name });
+  console.log("Joining chat with name:", name);
+  
+  joinBtn.disabled = true;
+  joinBtn.textContent = "Joining...";
+  
+  socket.emit("user:join", { deviceId: myDeviceId, username: name }, (response) => {
+    joinBtn.disabled = false;
+    joinBtn.textContent = "Join";
+  });
+  
   headerUsername.textContent = name;
   loginOverlay.classList.add("hidden");
   app.classList.remove("hidden");

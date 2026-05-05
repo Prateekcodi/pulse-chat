@@ -768,21 +768,37 @@ html, body {
   display: flex;
   gap: 4px;
   margin-top: 4px;
+  opacity: 0;
+  transition: opacity var(--t-fast);
+}
+
+.msg:hover .msg-actions {
+  opacity: 1;
 }
 
 .reaction-btn, .delete-btn {
-  background: transparent;
-  border: none;
-  font-size: 12px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border-subtle);
+  font-size: 13px;
   cursor: pointer;
-  padding: 2px 4px;
-  border-radius: var(--radius-xs);
-  transition: background var(--t-fast);
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  transition: all var(--t-fast);
 }
 
-.reaction-btn:hover { background: rgba(255,255,255,0.1); }
-.delete-btn { color: #ff6b6b; }
-.delete-btn:hover { background: rgba(255,107,107,0.2); }
+.reaction-btn:hover { 
+  background: rgba(0,229,176,0.15);
+  border-color: var(--mint);
+}
+
+.delete-btn { 
+  color: #ff6b6b;
+}
+
+.delete-btn:hover { 
+  background: rgba(255,107,107,0.15);
+  border-color: #ff6b6b;
+}
 
 /* System messages */
 .msg-system {

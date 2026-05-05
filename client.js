@@ -236,11 +236,10 @@ function renderMessage(msg) {
   const actions = document.createElement("div");
   actions.className = "msg-actions";
   actions.innerHTML = `
+    ${canDelete ? `<button class="delete-btn" onclick="deleteMessage('${msg._id}')" title="Delete">🗑️</button>` : ''}
     <button class="reaction-btn" onclick="addReaction('${msg._id}', '👍')">👍</button>
     <button class="reaction-btn" onclick="addReaction('${msg._id}', '❤️')">❤️</button>
     <button class="reaction-btn" onclick="addReaction('${msg._id}', '😂')">😂</button>
-    ${isMine ? `<button class="delete-btn" onclick="deleteMessage('${msg._id}')">🗑️</button>` : ''}
-    ${canDelete ? `<button class="delete-btn" title="Delete within 1 hour" onclick="deleteMessage('${msg._id}')">🗑️</button>` : ''}
   `;
   body.appendChild(actions);
 

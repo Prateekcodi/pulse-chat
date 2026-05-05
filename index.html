@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Chat App</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>Pulse Chat</title>
+  <link rel="stylesheet" href="style.css?v=4" />
   <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#111" />
+  <meta name="theme-color" content="#0f0c29" />
 </head>
 <body>
   <div id="login-overlay">
     <div class="login-card">
-      <h2>Chat App</h2>
+      <h2>Pulse Chat</h2>
       <input id="username-input" placeholder="Enter your name" autocomplete="off" maxlength="20" />
       <button id="join-btn">Join Chat</button>
     </div>
@@ -20,23 +20,21 @@
   <div id="app" class="hidden">
     <aside id="sidebar">
       <div class="sidebar-header">
-        <span>Users</span>
+        <span>Online Users</span>
         <span id="user-count">0</span>
       </div>
       <ul id="user-list"></ul>
     </aside>
 
     <main id="chat-area">
-      <header id="chat-header">
-        <span id="header-username"></span>
-      </header>
+      <header id="chat-header"></header>
       <div id="messages-container">
         <div id="messages"></div>
       </div>
       <div id="input-bar">
         <input type="file" id="image-input" accept="image/*" style="display:none" />
-        <button id="image-btn">&#128247;</button>
-        <input id="message-input" placeholder="Type a message" autocomplete="off" />
+        <button id="image-btn" title="Send image">📎</button>
+        <input id="message-input" placeholder="Type a message..." autocomplete="off" />
         <button id="send-btn">Send</button>
       </div>
     </main>
@@ -153,7 +151,7 @@
           users.forEach(function(user) {
             const li = document.createElement("li");
             li.className = user.isOnline ? "online" : "offline";
-            li.innerHTML = '<span class="online-dot" style="background:#4ade80"></span> <span>' + user.username + '</span>';
+            li.innerHTML = '<span class="online-dot"></span> <span>' + user.username + '</span>';
             userList.appendChild(li);
           });
         }
@@ -162,13 +160,17 @@
       function renderMessage(msg) {
         console.log("Rendering message:", msg._id || msg.id);
         const div = document.createElement("div");
-        div.className = "msg";
+        div.className = "msg " + ((msg.senderDeviceId === myDeviceId) ? "msg-mine" : "msg-other");
         div.dataset.id = msg._id || msg.id;
         const senderName = msg.senderName || msg.username || "Unknown";
         const text = msg.text || "";
-        div.innerHTML = '<div class="msg-header">' + senderName + '</div> <div>' + text + '</div>';
+        div.innerHTML = '<div class="msg-header">' + senderName + '</div> <div>' + escapeHtml(text) + '</div>';
         messagesEl.appendChild(div);
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
+
+      function escapeHtml(str) {
+        return str.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[c]);
       }
 
       console.log("Chat app initialized");

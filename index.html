@@ -96,8 +96,8 @@
         socket.emit("user:join", { deviceId: myDeviceId, username: name });
         console.log("Emitted user:join, hiding overlay now");
         document.getElementById("header-username").textContent = name;
-        loginOverlay.style.display = "none";
-        app.style.display = "flex";
+        loginOverlay.classList.add("hidden");
+        app.classList.remove("hidden");
         messageInput.focus();
       }
 

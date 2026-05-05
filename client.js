@@ -6,55 +6,68 @@ if (!myDeviceId) {
   localStorage.setItem("deviceId", myDeviceId);
 }
 
-const loginOverlay = document.getElementById("login-overlay");
-const usernameInput = document.getElementById("username-input");
-const joinBtn = document.getElementById("join-btn");
-const app = document.getElementById("app");
+const messagesEl = document.getElementById("messages");
+const messagesContainer = document.getElementById("messages-container");
 
-function joinChat() {
-  const name = usernameInput.value.trim();
-  if (!name) return;
-  
-  try {
-    socket.emit("user:join", { deviceId: myDeviceId, username: name });
-  } catch (e) {
-    console.error("Socket emit error:", e);
+window.addEventListener('DOMContentLoaded', () => {
+  const loginOverlay = document.getElementById("login-overlay");
+  const usernameInput = document.getElementById("username-input");
+  const joinBtn = document.getElementById("join-btn");
+  const app = document.getElementById("app");
+  const messageInput = document.getElementById("message-input");
+  const sendBtn = document.getElementById("send-btn");
+  const userList = document.getElementById("user-list");
+  const userCountEl = document.getElementById("user-count");
+  const imageInput = document.getElementById("image-input");
+  const imageBtn = document.getElementById("image-btn");
+
+  if (!loginOverlay || !usernameInput || !joinBtn || !app) {
+    console.error("Missing required DOM elements");
+    return;
   }
+
+  function joinChat() {
+    const name = usernameInput.value.trim();
+    if (!name) return;
+    
+    socket.emit("user:join", { deviceId: myDeviceId, username: name });
+    document.getElementById("header-username").textContent = name;
+    loginOverlay.classList.add("hidden");
+    app.classList.remove("hidden");
+    messageInput.focus();
+  }
+
+  joinBtn.addEventListener("click", joinChat);
+  usernameInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") joinChat();
+  });
+
+  messageInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") sendMessage();
+  });
+
+  sendBtn.addEventListener("click", sendMessage);
+
+  function sendMessage() {
+    const text = messageInput.value.trim();
+    if (!text) return;
+    socket.emit("message:send", { text });
+    messageInput.value = "";
+  }
+
+  imageBtn.addEventListener("click", () => imageInput.click());
+
+  imageInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      socket.emit("image:send", { imageUrl: ev.target.result });
+    };
+    reader.readAsDataURL(file);
+  });
   
-  document.getElementById("header-username").textContent = name;
-  loginOverlay.classList.add("hidden");
-  app.classList.remove("hidden");
-  document.getElementById("message-input").focus();
-}
-
-joinBtn.addEventListener("click", joinChat);
-usernameInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") joinChat();
-});
-
-messageInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") sendMessage();
-});
-
-sendBtn.addEventListener("click", sendMessage);
-
-function sendMessage() {
-  const text = messageInput.value.trim();
-  if (!text) return;
-  socket.emit("message:send", { text });
-  messageInput.value = "";
-}
-
-imageBtn.addEventListener("click", () => imageInput.click());
-
-imageInput.addEventListener("change", (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    socket.emit("image:send", { imageUrl: ev.target.result });
-  };
-  reader.readAsDataURL(file);
+  console.log("Chat app initialized");
 });
 
 socket.on("messages:history", (messages) => {
@@ -72,18 +85,22 @@ socket.on("message:deleted", (msgId) => {
 });
 
 socket.on("users:update", (users) => {
-  userCountEl.textContent = users.length;
-  userList.innerHTML = "";
-  users.forEach(user => {
-    const li = document.createElement("li");
-    li.className = user.isOnline ? "online" : "offline";
-    li.innerHTML = `
-      <span class="online-dot" style="background:${user.isOnline ? '#4ade80' : '#555'}"></span>
-      <span>${user.username}</span>
-      <span class="last-seen">${user.isOnline ? 'online' : formatLastSeen(user.lastSeen)}</span>
-    `;
-    userList.appendChild(li);
-  });
+  const userCountEl = document.getElementById("user-count");
+  const userList = document.getElementById("user-list");
+  if (userCountEl && userList) {
+    userCountEl.textContent = users.length;
+    userList.innerHTML = "";
+    users.forEach(user => {
+      const li = document.createElement("li");
+      li.className = user.isOnline ? "online" : "offline";
+      li.innerHTML = `
+        <span class="online-dot" style="background:${user.isOnline ? '#4ade80' : '#555'}"></span>
+        <span>${user.username}</span>
+        <span class="last-seen">${user.isOnline ? 'online' : formatLastSeen(user.lastSeen)}</span>
+      `;
+      userList.appendChild(li);
+    });
+  }
 });
 
 function renderMessage(msg) {

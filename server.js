@@ -45,6 +45,9 @@ mongoose.connect(process.env.MONGO_URI || "mongodb+srv://prateek:test12345@clust
 console.log("=== SERVER STARTING ===");
 console.log("Server will listen on port:", process.env.PORT || 8080);
 
+// Map deviceId to socketId for targeted messaging
+const deviceToSocket = new Map();
+
 // Periodic cleanup for stale connections (mark offline after 2 minutes of no activity)
 setInterval(async () => {
   try {
@@ -81,6 +84,7 @@ io.on("connection", (socket) => {
 
       socket.deviceId = deviceId;
       socket.username = username;
+      deviceToSocket.set(deviceId, socket.id);
 
       const users = await User.find({});
       const onlineUsers = users.filter(u => u.isOnline === true);
@@ -211,9 +215,10 @@ io.on("connection", (socket) => {
       if (message && !message.deliveredTo.includes(socket.deviceId)) {
         message.deliveredTo.push(socket.deviceId);
         await message.save();
-        const msgToSend = message.toObject();
-        msgToSend.username = msgToSend.senderName;
-        socket.to(message.senderDeviceId).emit("message:delivered", { messageId });
+        const senderSocketId = deviceToSocket.get(message.senderDeviceId);
+        if (senderSocketId) {
+          io.to(senderSocketId).emit("message:delivered", { messageId });
+        }
       }
     } catch (err) {}
   });
@@ -224,9 +229,10 @@ io.on("connection", (socket) => {
       if (message && !message.seenBy.includes(socket.deviceId)) {
         message.seenBy.push(socket.deviceId);
         await message.save();
-        const msgToSend = message.toObject();
-        msgToSend.username = msgToSend.senderName;
-        socket.to(message.senderDeviceId).emit("message:seen", { messageId });
+        const senderSocketId = deviceToSocket.get(message.senderDeviceId);
+        if (senderSocketId) {
+          io.to(senderSocketId).emit("message:seen", { messageId });
+        }
       }
     } catch (err) {}
   });
@@ -234,6 +240,7 @@ io.on("connection", (socket) => {
   socket.on("disconnect", async (reason) => {
     console.log("=== SERVER: User disconnected:", socket.deviceId, "reason:", reason);
     if (socket.deviceId) {
+      deviceToSocket.delete(socket.deviceId);
       try {
         await User.findOneAndUpdate(
           { deviceId: socket.deviceId },

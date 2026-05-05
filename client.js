@@ -572,9 +572,16 @@ socket.on("messages:loadmore", ({ messages, hasMore }) => {
 });
 
 socket.on("message:new", msg => {
-  renderMessage(msg);
-  if (msg.senderDeviceId !== myDeviceId) {
+  const isMine = msg.senderDeviceId === myDeviceId;
+  if (!isMine) {
     socket.emit("message:delivered", { messageId: msg._id });
+  }
+  renderMessage(msg);
+  // Mark as seen after render
+  if (!isMine) {
+    setTimeout(() => {
+      socket.emit("message:seen", { messageId: msg._id });
+    }, 500);
   }
 });
 
@@ -711,30 +718,7 @@ messagesWrap.addEventListener("scroll", () => {
     isLoadingMessages = true;
     socket.emit("message:loadmore", { before: oldestMessageTime });
   }
-  
-  if (!intersectionObserver) {
-    intersectionObserver = new IntersectionObserver(entries => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const msgId = entry.target.dataset.id;
-          const msgDeviceId = entry.target.dataset.deviceId;
-          if (msgDeviceId && msgDeviceId !== myDeviceId) {
-            socket.emit("message:seen", { messageId: msgId });
-            const el = entry.target.querySelector(".msg-status");
-            if (el) el.innerHTML = '<span style="color:#5ac8fa;">✓✓</span>';
-          }
-        }
-      });
-    }, { threshold: 0.8 });
-  }
-  
-  document.querySelectorAll(".msg:not(.observed)").forEach(el => {
-    el.classList.add("observed");
-    intersectionObserver.observe(el);
-  });
 });
-
-let intersectionObserver = null;
 
 /* ── Scroll Controller ─────────────────────────────────────────────── */
 (function initScrollController() {

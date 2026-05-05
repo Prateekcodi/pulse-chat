@@ -11,11 +11,13 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: "*", methods: ["GET", "POST"] },
   pingTimeout: 60000,
-  pingInterval: 25000
+  pingInterval: 25000,
+  serveClient: true
 });
 
 app.use(express.static(__dirname));
 app.use(express.json({ limit: "10mb" }));
+console.log("Static files directory:", __dirname);
 
 mongoose.connect(process.env.MONGO_URI || "mongodb+srv://prateek:test12345@cluster0.d63q5xw.mongodb.net/chat?retryWrites=true&w=majority", {
   serverSelectionTimeoutMS: 5000,

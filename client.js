@@ -424,7 +424,12 @@ sendBtn.addEventListener("click", sendMessage);
 messageInput.addEventListener("keydown", e => { if (e.key === "Enter") sendMessage(); });
 
 /* ── Cancel reply ─────────────────────────────────────────────────── */
-document.getElementById("cancel-reply").addEventListener("click", clearReply);
+(function initCancelReply() {
+  const cancelBtn = document.getElementById("cancel-reply");
+  if (cancelBtn) {
+    cancelBtn.addEventListener("click", clearReply);
+  }
+})();
 
 /* ── Image send ─────────────────────────────────────────────────── */
 imageBtn.addEventListener("click", () => imageInput.click());

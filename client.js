@@ -15,6 +15,20 @@ if (!myDeviceId) {
 
 console.log("Device ID:", myDeviceId);
 
+const loginOverlay = document.getElementById("login-overlay");
+const usernameInput = document.getElementById("username-input");
+const joinBtn = document.getElementById("join-btn");
+const app = document.getElementById("app");
+const messagesEl = document.getElementById("messages");
+const messagesContainer = document.getElementById("messages-container");
+const messageInput = document.getElementById("message-input");
+const sendBtn = document.getElementById("send-btn");
+const userList = document.getElementById("user-list");
+const userCountEl = document.getElementById("user-count");
+const imageInput = document.getElementById("image-input");
+const imageBtn = document.getElementById("image-btn");
+const headerUsername = document.getElementById("header-username");
+
 socket.on("connect", () => {
   console.log("Socket connected:", socket.id);
   joinBtn.disabled = false;
@@ -35,20 +49,6 @@ socket.on("disconnect", (reason) => {
 socket.on("connect_timeout", (timeout) => {
   console.error("Connection timeout");
 });
-
-const loginOverlay = document.getElementById("login-overlay");
-const usernameInput = document.getElementById("username-input");
-const joinBtn = document.getElementById("join-btn");
-const app = document.getElementById("app");
-const messagesEl = document.getElementById("messages");
-const messagesContainer = document.getElementById("messages-container");
-const messageInput = document.getElementById("message-input");
-const sendBtn = document.getElementById("send-btn");
-const userList = document.getElementById("user-list");
-const userCountEl = document.getElementById("user-count");
-const imageInput = document.getElementById("image-input");
-const imageBtn = document.getElementById("image-btn");
-const headerUsername = document.getElementById("header-username");
 
 function joinChat() {
   const name = usernameInput.value.trim();

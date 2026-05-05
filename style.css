@@ -618,11 +618,36 @@ html, body {
 
 .ch-left { display: flex; align-items: center; }
 .ch-right {
-  display: flex; align-items: center; gap: 7px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
   font-size: 12px;
   color: var(--tx-muted);
   font-family: var(--font-mono);
 }
+
+#logout-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--tx-muted);
+  cursor: pointer;
+  transition: all var(--t-fast);
+}
+
+#logout-btn:hover {
+  background: rgba(255,107,107,0.1);
+  color: #ff6b6b;
+  border-color: #ff6b6b;
+  transform: scale(1.06);
+}
+
+#logout-btn:active { transform: scale(0.95); }
 
 .live-dot {
   width: 7px; height: 7px;

@@ -68,7 +68,7 @@
 })();
 
 /* ── State ──────────────────────────────────────────────────────── */
-let myUsername   = null;
+let myUsername   = localStorage.getItem("username") || null;
 let myDeviceId   = localStorage.getItem("deviceId");
 if (!myDeviceId) {
   myDeviceId = crypto.randomUUID();
@@ -95,7 +95,11 @@ const myNameEl        = document.getElementById("my-name");
 const socket = io({ path: "/socket.io", transports: ["websocket", "polling"] });
 socket.on("connect_error", () => appendSystemMsg("Connection lost — retrying…"));
 socket.on("disconnect",    () => appendSystemMsg("Disconnected"));
-socket.on("connect",       () => { if (myUsername) socket.emit("user:join", { deviceId: myDeviceId, username: myUsername }); });
+socket.on("connect",       () => { 
+  if (myUsername) {
+    socket.emit("user:join", { deviceId: myDeviceId, username: myUsername });
+  }
+});
 
 /* ── Colour & Avatar helpers ────────────────────────────────────── */
 const PALETTE = ["#00e5b0","#ff7b45","#7c6af7","#f0c040","#4cb8f5","#e05c8a","#a0e040","#c47cf7"];
@@ -249,6 +253,7 @@ function joinChat() {
   }
 
   myUsername = name;
+  localStorage.setItem("username", name);
 
   if (myAvatarEl) {
     myAvatarEl.textContent = initials(name);
@@ -266,9 +271,31 @@ function joinChat() {
   socket.emit("user:join", { deviceId: myDeviceId, username: name });
 }
 
+/* ── Logout ─────────────────────────────────────────────────────── */
+function logout() {
+  localStorage.removeItem("username");
+  myUsername = null;
+  app.classList.add("hidden");
+  loginOverlay.style.display = "flex";
+  loginOverlay.classList.remove("out");
+  usernameInput.value = "";
+  usernameInput.focus();
+}
+
 joinBtn.addEventListener("click", joinChat);
 usernameInput.addEventListener("keydown", e => { if (e.key === "Enter") joinChat(); });
-window.addEventListener("load", () => usernameInput.focus());
+window.addEventListener("load", () => {
+  if (myUsername) {
+    myAvatarEl.textContent = initials(myUsername);
+    myAvatarEl.style.background = colorFor(myUsername);
+    myNameEl.textContent = myUsername;
+    app.classList.remove("hidden");
+    loginOverlay.style.display = "none";
+    messageInput.focus();
+  } else {
+    usernameInput.focus();
+  }
+});
 
 /* ── Send message ───────────────────────────────────────────────── */
 function sendMessage() {

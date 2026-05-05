@@ -105,8 +105,13 @@ function joinChat() {
          }
 
          console.log("Emitting user:join with:", { deviceId: myDeviceId, username: name });
-         socket.emit("user:join", { deviceId: myDeviceId, username: name });
-         document.getElementById("header-username").textContent = name;
+socket.emit("user:join", { deviceId: myDeviceId, username: name });
+        socket.on("users:update", function(users) {
+          if (document.getElementById("login-overlay").classList.contains("hidden")) {
+            console.log("  User joined confirmed via users:update");
+          }
+        });
+        document.getElementById("header-username").textContent = name;
          loginOverlay.classList.add("hidden");
          app.classList.remove("hidden");
          messageInput.focus();

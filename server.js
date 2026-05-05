@@ -169,6 +169,11 @@ io.on("connection", (socket) => {
   });
 
   socket.on("image:send", async (data) => {
+    console.log("=== SERVER: image:send received ===", { 
+      deviceId: socket.deviceId, 
+      username: socket.username,
+      hasImageUrl: !!data.imageUrl 
+    });
     try {
       const message = await Message.create({
         imageUrl: data.imageUrl,
@@ -180,7 +185,9 @@ io.on("connection", (socket) => {
       const msgToSend = message.toObject();
       msgToSend.username = msgToSend.senderName;
       io.emit("message:new", msgToSend);
+      console.log("=== SERVER: Image saved with id:", message._id);
     } catch (err) {
+      console.error("Image send error:", err.message);
       const message = {
         _id: Date.now().toString(),
         id: Date.now().toString(),

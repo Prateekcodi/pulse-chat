@@ -206,7 +206,7 @@ function prependMessages(msgs) {
   });
   messagesEl.insertBefore(fragment, messagesEl.firstChild);
   if (msgs.length > 0) {
-    oldestMessageTime = new Date(msgs[0].timestamp);
+    oldestMessageTime = new Date(msgs[msgs.length - 1].timestamp);
   }
 }
 
@@ -505,7 +505,19 @@ imageInput.addEventListener("change", e => {
   imageBtn.style.opacity = "0.4";
   const reader = new FileReader();
   reader.onload = ev => {
-    socket.emit("image:send", { imageUrl: ev.target.result });
+    const imageUrl = ev.target.result;
+    const tempId = "img_" + Date.now();
+    const tempMsg = {
+      _id: tempId,
+      senderDeviceId: myDeviceId,
+      senderName: myUsername,
+      username: myUsername,
+      type: "image",
+      imageUrl: imageUrl,
+      timestamp: new Date()
+    };
+    renderMessage(tempMsg);
+    socket.emit("image:send", { imageUrl });
     imageBtn.disabled = false;
     imageBtn.style.opacity = "";
     imageInput.value = "";

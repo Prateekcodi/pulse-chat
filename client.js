@@ -1,19 +1,10 @@
-const socket = io({ 
-  transports: ["websocket", "polling"],
-  reconnection: true,
-  reconnectionAttempts: 5,
-  timeout: 10000
-});
-
-console.log("client.js loaded, socket created");
+const socket = io();
 
 let myDeviceId = localStorage.getItem("deviceId");
 if (!myDeviceId) {
   myDeviceId = crypto.randomUUID();
   localStorage.setItem("deviceId", myDeviceId);
 }
-
-console.log("Device ID:", myDeviceId);
 
 const loginOverlay = document.getElementById("login-overlay");
 const usernameInput = document.getElementById("username-input");
@@ -29,54 +20,15 @@ const imageInput = document.getElementById("image-input");
 const imageBtn = document.getElementById("image-btn");
 const headerUsername = document.getElementById("header-username");
 
-socket.on("connect", () => {
-  console.log("Socket connected:", socket.id);
-  joinBtn.disabled = false;
-  joinBtn.textContent = "Join";
-});
-
-socket.on("connect_error", (err) => {
-  console.error("Socket connection error:", err.message);
-  joinBtn.disabled = false;
-  joinBtn.textContent = "Join";
-  alert("Connection failed. Retrying...");
-});
-
-socket.on("disconnect", (reason) => {
-  console.log("Socket disconnected:", reason);
-});
-
-socket.on("connect_timeout", (timeout) => {
-  console.error("Connection timeout");
-});
-
 function joinChat() {
   const name = usernameInput.value.trim();
   if (!name) return;
-  console.log("Joining chat with name:", name);
   
-  if (!socket.connected) {
-    console.log("Socket not connected, waiting...");
-    socket.connect();
-  }
-  
-  joinBtn.disabled = true;
-  joinBtn.textContent = "Connecting...";
-  
-  const handleJoin = () => {
-    socket.emit("user:join", { deviceId: myDeviceId, username: name });
-    headerUsername.textContent = name;
-    loginOverlay.classList.add("hidden");
-    app.classList.remove("hidden");
-    messageInput.focus();
-    socket.off("connect", handleJoin);
-  };
-  
-  if (socket.connected) {
-    handleJoin();
-  } else {
-    socket.on("connect", handleJoin);
-  }
+  socket.emit("user:join", { deviceId: myDeviceId, username: name });
+  headerUsername.textContent = name;
+  loginOverlay.classList.add("hidden");
+  app.classList.remove("hidden");
+  messageInput.focus();
 }
 
 joinBtn.addEventListener("click", joinChat);
@@ -154,7 +106,7 @@ function renderMessage(msg) {
       <div class="msg-header">
         ${msg.senderName} • ${formatTime(msg.timestamp)} ${msg.edited ? '<span class="msg-edited">(edited)</span>' : ''}
       </div>
-      <div class="msg-text" ${isMine ? 'contenteditable="true" data-action="edit"' : ''}>${escapeHtml(msg.text)}</div>
+      <div class="msg-text" ${isMine ? 'contenteditable="true"' : ''}>${escapeHtml(msg.text)}</div>
       ${isMine ? '<div class="msg-actions"><button class="action-btn" onclick="editMessage(\'' + msg._id + '\')">✏️</button></div>' : ''}
     `;
   }
@@ -216,11 +168,13 @@ const isFirstVisit = !localStorage.getItem("pwaDismissed");
 window.addEventListener("beforeinstallprompt", (e) => {
   e.preventDefault();
   deferredPrompt = e;
-  if (isFirstVisit) showInstallBanner();
+  if (isFirstVisit) {
+    setTimeout(showInstallBanner, 3000);
+  }
 });
 
 function showInstallBanner() {
-  if (!isFirstVisit) return;
+  if (document.getElementById("pwa-banner")) return;
   const banner = document.createElement("div");
   banner.id = "pwa-banner";
   banner.innerHTML = `

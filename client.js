@@ -90,6 +90,7 @@ const imageInput      = document.getElementById("image-input");
 const imageBtn        = document.getElementById("image-btn");
 const myAvatarEl      = document.getElementById("my-avatar");
 const myNameEl        = document.getElementById("my-name");
+const myProfile       = document.getElementById("my-profile");
 
 /* ── Socket ─────────────────────────────────────────────────────── */
 const socket = io({ path: "/socket.io", transports: ["websocket", "polling"] });
@@ -100,6 +101,18 @@ socket.on("connect",       () => {
     socket.emit("user:join", { deviceId: myDeviceId, username: myUsername });
   }
 });
+
+// Profile click handler
+if (myProfile) {
+  myProfile.style.cursor = "pointer";
+  myProfile.onclick = (e) => {
+    showUserInfo(myUsername, null, true, e.clientX, e.clientY);
+  };
+  myProfile.addEventListener('touchend', (e) => {
+    const touch = e.changedTouches[0];
+    showUserInfo(myUsername, null, true, touch.clientX, touch.clientY);
+  });
+}
 
 /* ── Colour & Avatar helpers ────────────────────────────────────── */
 const PALETTE = ["#00e5b0","#ff7b45","#7c6af7","#f0c040","#4cb8f5","#e05c8a","#a0e040","#c47cf7"];
@@ -138,7 +151,7 @@ function formatLastSeenPrecise(ts) {
   return `${Math.floor(diff / 86400000)}d ago`;
 }
 
-function showUserInfo(name, lastSeen, isOnline) {
+function showUserInfo(name, lastSeen, isOnline, clientX, clientY) {
   let tooltip = document.getElementById("user-tooltip");
   if (!tooltip) {
     tooltip = document.createElement("div");
@@ -147,7 +160,19 @@ function showUserInfo(name, lastSeen, isOnline) {
     document.body.appendChild(tooltip);
   }
   const timeStr = isOnline ? "online" : formatLastSeenPrecise(lastSeen);
-  tooltip.innerHTML = `<strong>${name}</strong><br><span>${timeStr}</span>`;
+  tooltip.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div style="width:32px;height:32px;border-radius:50%;background:${colorFor(name)};display:flex;align-items:center;justify-content:center;font-weight:700;color:#000;">${initials(name)}</div>
+      <div>
+        <div style="color:var(--mint);font-weight:600;margin-bottom:2px;">${name}</div>
+        <div style="color:var(--tx-secondary);font-size:11px;">${timeStr}</div>
+      </div>
+    </div>
+  `;
+  const x = clientX || window.innerWidth / 2;
+  const y = clientY || window.innerHeight / 2;
+  tooltip.style.left = (x + 12) + "px";
+  tooltip.style.top = (y - 30) + "px";
   tooltip.classList.add("show");
   setTimeout(() => tooltip.classList.remove("show"), 3000);
 }
@@ -198,9 +223,13 @@ function renderMessage(msg) {
 
   const av = makeAvatar(sender);
   av.style.cursor = "pointer";
-  av.onclick = () => {
-    showUserInfo(sender, null, true);
+  av.onclick = (e) => {
+    showUserInfo(sender, null, true, e.clientX, e.clientY);
   };
+  av.addEventListener('touchend', (e) => {
+    const touch = e.changedTouches[0];
+    showUserInfo(sender, null, true, touch.clientX, touch.clientY);
+  });
   wrap.appendChild(av);
 
   const body = document.createElement("div");
@@ -425,12 +454,18 @@ socket.on("users:update", users => {
 
     li.appendChild(av);
     li.appendChild(span);
-    
+
     // Click to show last seen
-    li.onclick = () => {
-      showUserInfo(name, lastSeen ? new Date(lastSeen) : null, isOnline);
+    li.onclick = (e) => {
+      showUserInfo(name, lastSeen ? new Date(lastSeen) : null, isOnline, e.clientX, e.clientY);
     };
-    
+
+    // Touch support for mobile
+    li.addEventListener('touchend', (e) => {
+      const touch = e.changedTouches[0];
+      showUserInfo(name, lastSeen ? new Date(lastSeen) : null, isOnline, touch.clientX, touch.clientY);
+    });
+
     userList.appendChild(li);
   });
 });
@@ -455,12 +490,18 @@ socket.on("server:users", users => {
 
     li.appendChild(av);
     li.appendChild(span);
-    
+
     // Click to show basic info (no lastSeen in this event)
-    li.onclick = () => {
-      showUserInfo(name, null, true);
+    li.onclick = (e) => {
+      showUserInfo(name, null, true, e.clientX, e.clientY);
     };
-    
+
+    // Touch support for mobile
+    li.addEventListener('touchend', (e) => {
+      const touch = e.changedTouches[0];
+      showUserInfo(name, null, true, touch.clientX, touch.clientY);
+    });
+
     userList.appendChild(li);
   });
 });

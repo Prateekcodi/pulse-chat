@@ -862,20 +862,12 @@ html, body {
   transform: translateY(10px);
   transition: all var(--t-fast);
   pointer-events: none;
+  min-width: 180px;
 }
 
 .user-tooltip.show {
   opacity: 1;
   transform: translateY(0);
-}
-
-.user-tooltip strong {
-  color: var(--mint);
-}
-
-.user-tooltip span {
-  color: var(--tx-secondary);
-  font-size: 11px;
 }
 
 /* System messages */

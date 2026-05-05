@@ -17,7 +17,9 @@ const messageSchema = new mongoose.Schema({
   seenBy: [{ type: String }],
   deliveredTo: [{ type: String }],
   reactions: { type: mongoose.Schema.Types.Mixed, default: {} },
-  replyTo: replySchema
+  replyTo: replySchema,
+  viewOnce: { type: Boolean, default: false },
+  viewedAt: [{ deviceId: { type: String }, time: { type: Date } }]
 });
 
 module.exports = mongoose.model("Message", messageSchema);

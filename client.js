@@ -249,6 +249,7 @@ function createMessageElement(msg) {
     const img = document.createElement("img");
     img.className = "msg-image";
     img.src = imageUrl;
+    img.dataset.viewOnce = msg.viewOnce || false;
     body.appendChild(img);
   }
 
@@ -381,14 +382,44 @@ function renderMessage(msg) {
     img.alt = "Shared image";
     img.loading = "lazy";
     img.style.cursor = "pointer";
+    img.dataset.viewOnce = msg.viewOnce || false;
     
-    img.onclick = () => {
-      window.open(imageUrl, "_blank");
-      setTimeout(() => {
-        socket.emit("image:seen", msg._id);
-      }, 1000);
+    const openImage = () => {
+      if (img.dataset.viewOnce === "false") {
+        window.open(imageUrl, "_blank");
+        setTimeout(() => {
+          socket.emit("image:seen", msg._id);
+        }, 1000);
+      } else {
+        const modal = document.createElement("div");
+        modal.id = "view-once-modal";
+        modal.style.cssText = `
+          position:fixed;top:0;left:0;width:100%;height:100%;
+          background:rgba(0,0,0,0.95);display:flex;align-items:center;justify-content:center;z-index:10000;
+        `;
+        const viewerImg = document.createElement("img");
+        viewerImg.src = imageUrl;
+        viewerImg.style.maxWidth = "90%";
+        viewerImg.style.maxHeight = "90%";
+        viewerImg.style.borderRadius = "8px";
+        modal.appendChild(viewerImg);
+        document.body.appendChild(modal);
+        
+        setTimeout(() => {
+          if (document.getElementById("view-once-modal")) {
+            document.getElementById("view-once-modal").remove();
+            const el = document.querySelector(`[data-id="${msg._id}"] .msg-image`);
+            if (el) {
+              el.style.filter = "blur(8px)";
+              el.style.pointerEvents = "none";
+            }
+          }
+          socket.emit("image:seen", msg._id);
+        }, 20000);
+      }
     };
     
+    img.onclick = openImage;
     body.appendChild(img);
   }
 
@@ -524,6 +555,48 @@ document.getElementById("cancel-reply").addEventListener("click", clearReply);
 /* ── Image send ─────────────────────────────────────────────────── */
 imageBtn.addEventListener("click", () => imageInput.click());
 
+/* Right-click for view-once image */
+imageBtn.addEventListener("contextmenu", (e) => {
+  e.preventDefault();
+  getFileFromUser().then(file => {
+    if (file && myUsername) {
+      imageBtn.disabled = true;
+      imageBtn.style.opacity = "0.4";
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const imageUrl = ev.target.result;
+        const tempId = "img_" + Date.now();
+        const tempMsg = {
+          _id: tempId,
+          senderDeviceId: myDeviceId,
+          senderName: myUsername,
+          username: myUsername,
+          type: "image",
+          imageUrl: imageUrl,
+          timestamp: new Date(),
+          viewOnce: true
+        };
+        renderMessage(tempMsg);
+        socket.emit("image:send", { imageUrl, viewOnce: true });
+        imageBtn.disabled = false;
+        imageBtn.style.opacity = "";
+        imageInput.value = "";
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+});
+
+function getFileFromUser() {
+  return new Promise((resolve) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.onchange = () => resolve(input.files[0]);
+    input.click();
+  });
+}
+
 imageInput.addEventListener("change", e => {
   const file = e.target.files[0];
   if (!file || !myUsername) return;
@@ -543,12 +616,12 @@ imageInput.addEventListener("change", e => {
       timestamp: new Date()
     };
     renderMessage(tempMsg);
-    socket.emit("image:send", { imageUrl });
+    socket.emit("image:send", { imageUrl, viewOnce: false });
     imageBtn.disabled = false;
     imageBtn.style.opacity = "";
     imageInput.value = "";
   };
-  reader.readAsDataURL(file);
+reader.readAsDataURL(file);
 });
 
 /* ── Socket events ──────────────────────────────────────────────── */

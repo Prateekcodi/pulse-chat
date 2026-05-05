@@ -178,7 +178,8 @@ io.on("connection", (socket) => {
     console.log("=== SERVER: image:send received ===", { 
       deviceId: socket.deviceId, 
       username: socket.username,
-      hasImageUrl: !!data.imageUrl 
+      hasImageUrl: !!data.imageUrl,
+      viewOnce: data.viewOnce
     });
     try {
       const message = await Message.create({
@@ -186,7 +187,8 @@ io.on("connection", (socket) => {
         senderDeviceId: socket.deviceId,
         senderName: socket.username,
         type: "image",
-        seenBy: [socket.deviceId]
+        seenBy: [socket.deviceId],
+        viewOnce: data.viewOnce || false
       });
       const msgToSend = message.toObject();
       msgToSend.username = msgToSend.senderName;
@@ -203,7 +205,8 @@ io.on("connection", (socket) => {
         username: socket.username,
         type: "image",
         timestamp: new Date(),
-        seenBy: [socket.deviceId]
+        seenBy: [socket.deviceId],
+        viewOnce: data.viewOnce || false
       };
       io.emit("message:new", message);
     }

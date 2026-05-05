@@ -182,6 +182,35 @@ io.on("connection", (socket) => {
       }
     }
   });
+
+  socket.on("reaction:add", async ({ messageId, emoji }) => {
+    try {
+      const message = await Message.findById(messageId);
+      if (message) {
+        if (!message.reactions) message.reactions = {};
+        if (!message.reactions[emoji]) message.reactions[emoji] = [];
+        if (!message.reactions[emoji].includes(socket.username)) {
+          message.reactions[emoji].push(socket.username);
+          await message.save();
+          io.emit("reaction:added", { messageId, emoji, username: socket.username });
+        }
+      }
+    } catch (err) {}
+  });
+
+  socket.on("message:delete", async ({ messageId }) => {
+    try {
+      const message = await Message.findById(messageId);
+      if (message && message.senderDeviceId === socket.deviceId) {
+        const msgTime = new Date(message.timestamp);
+        const now = new Date();
+        if ((now - msgTime) < 3600000) {
+          await Message.findByIdAndDelete(messageId);
+          io.emit("message:deleted", messageId);
+        }
+      }
+    } catch (err) {}
+  });
 });
 
 const PORT = process.env.PORT || 8080;

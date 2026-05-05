@@ -758,6 +758,32 @@ html, body {
   font-weight: 400;
 }
 
+.msg-text[contenteditable="true"]:focus {
+  outline: 1px dashed var(--mint);
+  background: rgba(0,229,176,0.05);
+  border-radius: var(--radius-sm);
+}
+
+.msg-actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.reaction-btn, .delete-btn {
+  background: transparent;
+  border: none;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: var(--radius-xs);
+  transition: background var(--t-fast);
+}
+
+.reaction-btn:hover { background: rgba(255,255,255,0.1); }
+.delete-btn { color: #ff6b6b; }
+.delete-btn:hover { background: rgba(255,107,107,0.2); }
+
 /* System messages */
 .msg-system {
   text-align: center;

@@ -158,6 +158,10 @@ function renderMessage(msg) {
   const sender    = msg.senderName || msg.username || "Unknown";
   const ts        = msg.timestamp || Date.now();
   const color     = colorFor(sender);
+  const isMine    = msg.senderDeviceId === myDeviceId;
+  const msgTime   = new Date(ts);
+  const now       = new Date();
+  const canDelete = isMine && (now - msgTime) < 3600000;
 
   const wrap = document.createElement("div");
   wrap.className = "msg";
@@ -174,7 +178,7 @@ function renderMessage(msg) {
   meta.className = "msg-meta";
   meta.innerHTML = `
     <span class="msg-username" style="color:${color}">${esc(sender)}</span>
-    <span class="msg-time">${fmtTime(ts)}</span>
+    <span class="msg-time">${fmtTime(ts)}${msg.edited ? ' <span class="msg-edited">(edited)</span>' : ''}</span>
   `;
   body.appendChild(meta);
 
@@ -182,6 +186,18 @@ function renderMessage(msg) {
     const p = document.createElement("div");
     p.className = "msg-text";
     p.textContent = text;
+    p.contentEditable = isMine ? "true" : "false";
+    p.onblur = () => {
+      if (p.textContent !== text) {
+        socket.emit("message:edit", { messageId: msg._id, text: p.textContent });
+      }
+    };
+    p.onkeydown = (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        p.blur();
+      }
+    };
     body.appendChild(p);
   }
 
@@ -216,6 +232,17 @@ function renderMessage(msg) {
     
     body.appendChild(imgContainer);
   }
+
+  const actions = document.createElement("div");
+  actions.className = "msg-actions";
+  actions.innerHTML = `
+    <button class="reaction-btn" onclick="addReaction('${msg._id}', '👍')">👍</button>
+    <button class="reaction-btn" onclick="addReaction('${msg._id}', '❤️')">❤️</button>
+    <button class="reaction-btn" onclick="addReaction('${msg._id}', '😂')">😂</button>
+    ${isMine ? `<button class="delete-btn" onclick="deleteMessage('${msg._id}')">🗑️</button>` : ''}
+    ${canDelete ? `<button class="delete-btn" title="Delete within 1 hour" onclick="deleteMessage('${msg._id}')">🗑️</button>` : ''}
+  `;
+  body.appendChild(actions);
 
   wrap.appendChild(body);
   messagesEl.appendChild(wrap);
@@ -378,6 +405,18 @@ function editMessage(msgId) {
   const newText = prompt("Edit message:", textEl.textContent);
   if (newText !== null) {
     socket.emit("message:edit", { messageId: msgId, text: newText });
+  }
+}
+
+/* ── Reactions ─────────────────────────────────────────────────────── */
+function addReaction(msgId, emoji) {
+  socket.emit("reaction:add", { messageId: msgId, emoji });
+}
+
+/* ── Delete message ────────────────────────────────────────────────── */
+function deleteMessage(msgId) {
+  if (confirm("Delete this message?")) {
+    socket.emit("message:delete", { messageId: msgId });
   }
 }
 

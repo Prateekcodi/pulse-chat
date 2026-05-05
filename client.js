@@ -487,6 +487,77 @@ function deleteMessage(msgId) {
   }
 }
 
+/* ── Scroll Controller ─────────────────────────────────────────────── */
+(function initScrollController() {
+  const ctrl = document.getElementById("scroll-ctrl");
+  if (!ctrl) return;
+  
+  let isDragging = false;
+  let startY = 0;
+  let startTop = 0;
+  let moved = false;
+  
+  function onDrag(e) {
+    if (!isDragging) return;
+    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+    const dy = clientY - startY;
+    const newTop = startTop + dy;
+    
+    const maxTop = window.innerHeight - 100;
+    const minTop = 100;
+    const clampedTop = Math.max(minTop, Math.min(maxTop, newTop));
+    
+    ctrl.style.top = clampedTop + "px";
+    ctrl.style.transform = "none";
+    
+    const progress = (clampedTop - minTop) / (maxTop - minTop);
+    const scrollTop = progress * (messagesWrap.scrollHeight - messagesWrap.clientHeight);
+    messagesWrap.scrollTop = Math.max(0, scrollTop);
+    
+    moved = true;
+  }
+  
+  function onRelease() {
+    if (!isDragging) return;
+    isDragging = false;
+    ctrl.classList.remove("dragging");
+    
+    if (!moved) {
+      messagesWrap.scrollTop = 0;
+      ctrl.style.transition = "top 0.4s var(--ease-out), transform 0.4s var(--ease-out)";
+      ctrl.style.top = "50%";
+      ctrl.style.transform = "translateY(-50%)";
+    } else {
+      const finalTop = parseInt(ctrl.style.top);
+      ctrl.style.transition = "top 0.4s var(--ease-out), transform 0.4s var(--ease-out)";
+    }
+  }
+  
+  ctrl.addEventListener("mousedown", (e) => {
+    isDragging = true;
+    moved = false;
+    startY = e.clientY;
+    startTop = ctrl.getBoundingClientRect().top;
+    ctrl.classList.add("dragging");
+    ctrl.style.transition = "none";
+    e.preventDefault();
+  });
+  
+  ctrl.addEventListener("touchstart", (e) => {
+    isDragging = true;
+    moved = false;
+    startY = e.touches[0].clientY;
+    startTop = ctrl.getBoundingClientRect().top;
+    ctrl.classList.add("dragging");
+    ctrl.style.transition = "none";
+  });
+  
+  document.addEventListener("mousemove", onDrag);
+  document.addEventListener("touchmove", onDrag, { passive: false });
+  document.addEventListener("mouseup", onRelease);
+  document.addEventListener("touchend", onRelease);
+})();
+
 /* ── PWA ────────────────────────────────────────────────────────── */
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js');

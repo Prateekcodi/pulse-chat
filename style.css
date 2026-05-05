@@ -1130,19 +1130,53 @@ html, body {
 }
 
 /* ══════════════════ RESPONSIVE ═════════════════════════════════════ */
+/* Scroll controller */
+#scroll-ctrl {
+  position: fixed;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid var(--border-mid);
+  border-radius: 50%;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  z-index: 90;
+  transition: all var(--t-fast);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+#scroll-ctrl:active {
+  cursor: grabbing;
+  opacity: 0.8;
+}
+
+#scroll-ctrl:hover {
+  background: rgba(0,229,176,0.15);
+  border-color: var(--mint);
+  transform: translateY(-50%) scale(1.08);
+}
+
+#scroll-ctrl.dragging {
+  transition: none;
+}
+
+#scroll-ctrl svg {
+  width: 24px;
+  height: 24px;
+  color: var(--tx-primary);
+}
+
 @media (max-width: 680px) {
-  :root { --sidebar-w: 58px; }
-  .sb-section-label,
-  .ul-name,
-  .brand-sm-name,
-  .sb-footer,
-  .ch-sep,
-  .ch-sub { display: none; }
-  #sidebar { align-items: center; }
-  .sb-top { justify-content: center; padding: 0; width: 100%; }
-  .brand-sm { justify-content: center; }
-  #user-list li { justify-content: center; padding: 8px 0; }
-  #chat-header { padding: 0 16px; }
-  #messages-container { padding: 16px; }
-  #input-bar { padding: 10px 12px; gap: 8px; }
+  #scroll-ctrl {
+    width: 44px;
+    height: 44px;
+    right: 12px;
+  }
 }

@@ -35,173 +35,143 @@
       </div>
       <div id="input-bar">
         <input type="file" id="image-input" accept="image/*" style="display:none" />
-        <button id="image-btn">�</button>
+        <button id="image-btn">&#128247;</button>
         <input id="message-input" placeholder="Type a message" autocomplete="off" />
         <button id="send-btn">Send</button>
       </div>
     </main>
   </div>
 
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-   <script>
-     // Debug: Check if script loaded
-     console.log("=== CHAT APP DEBUG START ===");
-     console.log("Socket.IO loaded:", typeof io);
-     console.log("Document readyState:", document.readyState);
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script>
+    console.log("=== CHAT APP DEBUG START ===");
+    console.log("Socket.IO loaded:", typeof io);
 
-     const socket = io({ transports: ["websocket", "polling"] });
-     console.log("Socket created:", socket);
-     console.log("Socket connected:", socket.connected);
+    const socket = io({ transports: ["websocket", "polling"] });
+    console.log("Socket created:", socket);
 
-     socket.on("connect", () => {
-       console.log("SOCKET CONNECTED - id:", socket.id);
-     });
+    let myDeviceId = localStorage.getItem("deviceId");
+    if (!myDeviceId) {
+      myDeviceId = crypto.randomUUID();
+      localStorage.setItem("deviceId", myDeviceId);
+    }
+    console.log("Device ID:", myDeviceId);
 
-     socket.on("connect_error", (err) => {
-       console.error("SOCKET CONNECT ERROR:", err.message);
-     });
+    socket.on("connect", () => console.log("SOCKET CONNECTED - id:", socket.id));
+    socket.on("connect_error", (err) => console.error("SOCKET CONNECT ERROR:", err.message));
+    socket.on("disconnect", (reason) => console.log("SOCKET DISCONNECTED:", reason));
 
-     socket.on("disconnect", (reason) => {
-       console.log("SOCKET DISCONNECTED:", reason);
-     });
+    window.addEventListener('DOMContentLoaded', function() {
+      console.log("=== DOM LOADED ===");
 
-     let myDeviceId = localStorage.getItem("deviceId");
-     if (!myDeviceId) {
-       myDeviceId = crypto.randomUUID();
-       localStorage.setItem("deviceId", myDeviceId);
-     }
-     console.log("Device ID:", myDeviceId);
+      const loginOverlay = document.getElementById("login-overlay");
+      const usernameInput = document.getElementById("username-input");
+      const joinBtn = document.getElementById("join-btn");
+      const app = document.getElementById("app");
+      const messageInput = document.getElementById("message-input");
+      const sendBtn = document.getElementById("send-btn");
+      const userList = document.getElementById("user-list");
+      const userCountEl = document.getElementById("user-count");
+      const imageInput = document.getElementById("image-input");
+      const imageBtn = document.getElementById("image-btn");
+      const messagesEl = document.getElementById("messages");
+      const messagesContainer = document.getElementById("messages-container");
 
-     window.addEventListener('DOMContentLoaded', function() {
-       console.log("=== DOM LOADED ===");
+      console.log("Elements found:", { loginOverlay, usernameInput, joinBtn, app });
 
-       const loginOverlay = document.getElementById("login-overlay");
-       const usernameInput = document.getElementById("username-input");
-       const joinBtn = document.getElementById("join-btn");
-       const app = document.getElementById("app");
-       const messageInput = document.getElementById("message-input");
-       const sendBtn = document.getElementById("send-btn");
-       const userList = document.getElementById("user-list");
-       const userCountEl = document.getElementById("user-count");
-       const imageInput = document.getElementById("image-input");
-       const imageBtn = document.getElementById("image-btn");
-       const messagesEl = document.getElementById("messages");
-       const messagesContainer = document.getElementById("messages-container");
+      if (!loginOverlay || !usernameInput || !joinBtn || !app) {
+        console.error("Missing required DOM elements");
+        return;
+      }
 
-       console.log("Elements found:", { loginOverlay, usernameInput, joinBtn, app });
-
-       if (!loginOverlay || !usernameInput || !joinBtn || !app) {
-         console.error("Missing required DOM elements");
-         return;
-       }
-
-function joinChat() {
-          console.log("=== JOIN CLICKED ===");
-         const name = usernameInput.value.trim();
-         console.log("Username entered:", name);
-         if (!name) {
-           alert("Please enter your name");
-           return;
-         }
-
-         console.log("Emitting user:join with:", { deviceId: myDeviceId, username: name });
-socket.emit("user:join", { deviceId: myDeviceId, username: name });
-        socket.on("users:update", function(users) {
-          if (document.getElementById("login-overlay").classList.contains("hidden")) {
-            console.log("  User joined confirmed via users:update");
-          }
-        });
+      function joinChat() {
+        console.log("=== JOIN CLICKED ===");
+        const name = usernameInput.value.trim();
+        console.log("Username entered:", name);
+        if (!name) {
+          alert("Please enter your name");
+          return;
+        }
+        console.log("Emitting user:join with:", { deviceId: myDeviceId, username: name });
+        socket.emit("user:join", { deviceId: myDeviceId, username: name });
         document.getElementById("header-username").textContent = name;
-         loginOverlay.classList.add("hidden");
-         app.classList.remove("hidden");
-         messageInput.focus();
-       }
+        loginOverlay.classList.add("hidden");
+        app.classList.remove("hidden");
+        messageInput.focus();
+      }
 
-       joinBtn.addEventListener("click", joinChat);
-       console.log("Join button click listener attached");
+      joinBtn.addEventListener("click", joinChat);
+      console.log("Join button click listener attached");
 
-       usernameInput.addEventListener("keydown", function(e) {
-         console.log("Key pressed:", e.key);
-         if (e.key === "Enter") {
-           console.log("Enter pressed in username input");
-           joinChat();
-         }
-       });
+      usernameInput.addEventListener("keydown", function(e) {
+        if (e.key === "Enter") joinChat();
+      });
 
-       function sendMessage() {
-         console.log("=== SEND CLICKED ===");
-         const text = messageInput.value.trim();
-         console.log("Message text:", text);
-         if (!text) return;
-         socket.emit("message:send", { text });
-         messageInput.value = "";
-       }
+      function sendMessage() {
+        console.log("=== SEND CLICKED ===");
+        const text = messageInput.value.trim();
+        if (!text) return;
+        socket.emit("message:send", { text });
+        messageInput.value = "";
+      }
 
-       sendBtn.addEventListener("click", sendMessage);
-       console.log("Send button click listener attached");
+      sendBtn.addEventListener("click", sendMessage);
+      messageInput.addEventListener("keydown", function(e) {
+        if (e.key === "Enter") sendMessage();
+      });
 
-       messageInput.addEventListener("keydown", function(e) {
-         if (e.key === "Enter") sendMessage();
-       });
+      imageBtn.addEventListener("click", function() {
+        imageInput.click();
+      });
 
-       imageBtn.addEventListener("click", function() {
-         console.log("Image button clicked");
-         imageInput.click();
-       });
+      imageInput.addEventListener("change", function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+          socket.emit("image:send", { imageUrl: ev.target.result });
+        };
+        reader.readAsDataURL(file);
+      });
 
-       imageInput.addEventListener("change", function(e) {
-         const file = e.target.files[0];
-         console.log("Image selected:", file ? file.name : "none");
-         if (!file) return;
-         const reader = new FileReader();
-         reader.onload = function(ev) {
-           socket.emit("image:send", { imageUrl: ev.target.result });
-         };
-         reader.readAsDataURL(file);
-       });
+      socket.on("messages:history", function(messages) {
+        console.log("=== RECEIVED MESSAGES HISTORY ===", messages.length);
+        messages.forEach(renderMessage);
+      });
 
-       socket.on("messages:history", function(messages) {
-         console.log("=== RECEIVED MESSAGES HISTORY ===", messages);
-         messages.forEach(renderMessage);
-       });
+      socket.on("message:new", function(msg) {
+        console.log("=== RECEIVED NEW MESSAGE ===");
+        renderMessage(msg);
+      });
 
-       socket.on("message:new", function(msg) {
-         console.log("=== RECEIVED NEW MESSAGE ===", msg);
-         renderMessage(msg);
-       });
+      socket.on("users:update", function(users) {
+        console.log("=== USERS UPDATE ===", users.length);
+        if (userCountEl) userCountEl.textContent = users.length;
+        if (userList) {
+          userList.innerHTML = "";
+          users.forEach(function(user) {
+            const li = document.createElement("li");
+            li.className = user.isOnline ? "online" : "offline";
+            li.innerHTML = '<span class="online-dot" style="background:#4ade80"></span> <span>' + user.username + '</span>';
+            userList.appendChild(li);
+          });
+        }
+      });
 
-       socket.on("users:update", function(users) {
-         console.log("=== USERS UPDATE ===", users);
-         if (userCountEl) userCountEl.textContent = users.length;
-         if (userList) {
-           userList.innerHTML = "";
-           users.forEach(function(user) {
-             const li = document.createElement("li");
-             li.className = user.isOnline ? "online" : "offline";
-             li.innerHTML = '<span class="online-dot" style="background:#4ade80"></span> <span>' + user.username + '</span>';
-             userList.appendChild(li);
-           });
-         }
-       });
+      function renderMessage(msg) {
+        console.log("Rendering message:", msg._id || msg.id);
+        const div = document.createElement("div");
+        div.className = "msg";
+        div.dataset.id = msg._id || msg.id;
+        const senderName = msg.senderName || msg.username || "Unknown";
+        const text = msg.text || "";
+        div.innerHTML = '<div class="msg-header">' + senderName + '</div> <div>' + text + '</div>';
+        messagesEl.appendChild(div);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
 
-       socket.on("connect_error", (err) => {
-         console.error("SOCKET CONNECT ERROR (dom ready):", err.message);
-       });
-
-function renderMessage(msg) {
-         console.log("Rendering message:", msg);
-         const div = document.createElement("div");
-         div.className = "msg";
-         div.dataset.id = msg._id || msg.id;
-         const senderName = msg.senderName || msg.username || "Unknown";
-         const text = msg.text || "";
-         div.innerHTML = '<div class="msg-header">' + senderName + '</div> <div>' + text + '</div>';
-         messagesEl.appendChild(div);
-         messagesContainer.scrollTop = messagesContainer.scrollHeight;
-       }
-
-       console.log("Chat app initialized");
-     });
+      console.log("Chat app initialized");
+    });
   </script>
 </body>
 </html>

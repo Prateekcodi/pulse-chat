@@ -9,13 +9,12 @@ const Message = require("./models/Message");
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-   cors: { origin: "*", methods: ["GET", "POST"] },
-   pingTimeout: 60000,
-   pingInterval: 25000,
-   path: "/socket.io"
+  cors: { origin: "*", methods: ["GET", "POST"] },
+  pingTimeout: 60000,
+  pingInterval: 25000,
+  path: "/socket.io"
 });
 
-// CSP headers for socket.io
 app.use((req, res, next) => {
   res.setHeader(
     "Content-Security-Policy",
@@ -24,11 +23,9 @@ app.use((req, res, next) => {
   next();
 });
 
-// Serve static files
 app.use(express.static(__dirname));
 app.use(express.json({ limit: "10mb" }));
 
-// Fallback route for SPA
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
@@ -44,79 +41,70 @@ console.log("=== SERVER STARTING ===");
 console.log("Server will listen on port:", process.env.PORT || 8080);
 
 io.on("connection", (socket) => {
-   console.log("=== SERVER: User connected:", socket.id, "from", socket.handshake.address);
-   console.log("  Socket transport:", socket.conn.transport);
+  console.log("=== SERVER: User connected:", socket.id);
 
-   socket.on("user:join", async ({ deviceId, username }) => {
-     console.log("=== SERVER: user:join received ===");
-     console.log("  deviceId:", deviceId);
-     console.log("  username:", username);
-
-     try {
-       let user = await User.findOne({ deviceId });
-       if (user) {
-         user.username = username;
-         user.isOnline = true;
-         user.lastSeen = new Date();
-         await user.save();
-         console.log("  Updated existing user");
-       } else {
-         user = await User.create({ deviceId, username, isOnline: true });
-         console.log("  Created new user");
-       }
-
-socket.deviceId = deviceId;
-        socket.username = username;
-
-        io.emit("users:update", await User.find({}));
-
-        const messages = await Message.find({}).sort({ timestamp: 1 });
-        const messagesWithUsername = messages.map(m => {
-          const msg = m.toObject();
-          msg.username = msg.senderName;
-          return msg;
-        });
-        socket.emit("messages:history", messagesWithUsername);
-        console.log("  Sent messages history:", messagesWithUsername.length);
-        console.log("=== SERVER: User joined successfully:", username);
-     } catch (err) {
-       console.error("=== SERVER: Database error on user join:", err.message);
-       socket.deviceId = deviceId;
-       socket.username = username;
-       io.emit("users:update", [{ deviceId, username, isOnline: true, lastSeen: new Date() }]);
-       socket.emit("messages:history", []);
-     }
-   });
-
-socket.on("message:send", async (data) => {
-      console.log("=== SERVER: message:send received ===", data);
-      try {
-        const message = await Message.create({
-          text: data.text,
-          senderDeviceId: socket.deviceId,
-          senderName: socket.username,
-          type: "chat"
-        });
-        console.log("  Message saved:", message);
-        const msgToSend = message.toObject();
-        msgToSend.username = msgToSend.senderName;
-        io.emit("message:new", msgToSend);
-        console.log("  Message broadcast to all");
-      } catch (err) {
-        console.error("=== SERVER: Database error on message send:", err.message);
-        const message = {
-          _id: Date.now().toString(),
-          id: Date.now().toString(),
-          text: data.text,
-          senderDeviceId: socket.deviceId,
-          senderName: socket.username,
-          username: socket.username,
-          type: "chat",
-          timestamp: new Date()
-        };
-        io.emit("message:new", message);
+  socket.on("user:join", async ({ deviceId, username }) => {
+    console.log("=== SERVER: user:join received ===", { deviceId, username });
+    try {
+      let user = await User.findOne({ deviceId });
+      if (user) {
+        user.username = username;
+        user.isOnline = true;
+        user.lastSeen = new Date();
+        await user.save();
+      } else {
+        user = await User.create({ deviceId, username, isOnline: true });
       }
-    });
+
+      socket.deviceId = deviceId;
+      socket.username = username;
+
+      const users = await User.find({});
+      io.emit("users:update", users);
+
+      const messages = await Message.find({}).sort({ timestamp: 1 });
+      const messagesWithUsername = messages.map(m => {
+        const msg = m.toObject();
+        msg.username = msg.senderName;
+        return msg;
+      });
+      socket.emit("messages:history", messagesWithUsername);
+      socket.emit("join:success", { status: "ok" });
+      console.log("=== SERVER: User joined:", username);
+    } catch (err) {
+      console.error("Database error:", err.message);
+      socket.deviceId = deviceId;
+      socket.username = username;
+      io.emit("users:update", [{ deviceId, username, isOnline: true }]);
+      socket.emit("messages:history", []);
+    }
+  });
+
+  socket.on("message:send", async (data) => {
+    try {
+      const message = await Message.create({
+        text: data.text,
+        senderDeviceId: socket.deviceId,
+        senderName: socket.username,
+        type: "chat"
+      });
+      const msgToSend = message.toObject();
+      msgToSend.username = msgToSend.senderName;
+      io.emit("message:new", msgToSend);
+    } catch (err) {
+      const message = {
+        _id: Date.now().toString(),
+        id: Date.now().toString(),
+        text: data.text,
+        senderDeviceId: socket.deviceId,
+        senderName: socket.username,
+        username: socket.username,
+        type: "chat",
+        timestamp: new Date()
+      };
+      io.emit("message:new", message);
+    }
+  });
 
   socket.on("message:edit", async ({ messageId, text }) => {
     try {
@@ -129,82 +117,51 @@ socket.on("message:send", async (data) => {
       }
     } catch (err) {
       console.error("Database error on message edit:", err.message);
-      // For edit, we can't really do a fallback without knowing the original message
     }
   });
 
   socket.on("image:send", async (data) => {
-      try {
-        const message = await Message.create({
-          imageUrl: data.imageUrl,
-          senderDeviceId: socket.deviceId,
-          senderName: socket.username,
-          type: "image",
-          seenBy: [socket.deviceId]
-        });
-        const msgToSend = message.toObject();
-        msgToSend.username = msgToSend.senderName;
-        io.emit("message:new", msgToSend);
-      } catch (err) {
-        console.error("Database error on image send:", err.message);
-        const message = {
-          _id: Date.now().toString(),
-          id: Date.now().toString(),
-          imageUrl: data.imageUrl,
-          senderDeviceId: socket.deviceId,
-          senderName: socket.username,
-          username: socket.username,
-          type: "image",
-          timestamp: new Date(),
-          seenBy: [socket.deviceId]
-        };
-        io.emit("message:new", message);
-      }
-    });
-
-  socket.on("image:seen", async (messageId) => {
     try {
-      const message = await Message.findById(messageId);
-      if (message && message.senderDeviceId !== socket.deviceId) {
-        if (!message.seenBy.includes(socket.deviceId)) {
-          message.seenBy.push(socket.deviceId);
-          await message.save();
-
-          const allUsers = await User.find({});
-          const otherUsers = allUsers.filter(u => u.deviceId !== message.senderDeviceId);
-          const allSeen = otherUsers.every(u => message.seenBy.includes(u.deviceId));
-
-          if (allSeen) {
-            await Message.findByIdAndDelete(messageId);
-            io.emit("message:deleted", messageId);
-          }
-        }
-      }
+      const message = await Message.create({
+        imageUrl: data.imageUrl,
+        senderDeviceId: socket.deviceId,
+        senderName: socket.username,
+        type: "image",
+        seenBy: [socket.deviceId]
+      });
+      const msgToSend = message.toObject();
+      msgToSend.username = msgToSend.senderName;
+      io.emit("message:new", msgToSend);
     } catch (err) {
-      console.error("Database error on image seen:", err.message);
-      // For image seen, we can't really do a fallback since we need the message data
+      const message = {
+        _id: Date.now().toString(),
+        id: Date.now().toString(),
+        imageUrl: data.imageUrl,
+        senderDeviceId: socket.deviceId,
+        senderName: socket.username,
+        username: socket.username,
+        type: "image",
+        timestamp: new Date(),
+        seenBy: [socket.deviceId]
+      };
+      io.emit("message:new", message);
     }
   });
 
-socket.on("disconnect", async () => {
-      console.log("=== SERVER: Socket disconnected:", socket.id);
-      if (socket.deviceId) {
-        try {
-          await User.findOneAndUpdate(
-            { deviceId: socket.deviceId },
-            { isOnline: false, lastSeen: new Date() }
-          );
-          const users = await User.find({});
-          io.emit("users:update", users);
-          console.log("  User marked offline:", socket.username);
-        } catch (err) {
-          console.error("=== SERVER: Database error on disconnect:", err.message);
-          io.emit("users:update", [{ deviceId: socket.deviceId, username: socket.username, isOnline: false, lastSeen: new Date() }]);
-        }
+  socket.on("disconnect", async () => {
+    if (socket.deviceId) {
+      try {
+        await User.findOneAndUpdate(
+          { deviceId: socket.deviceId },
+          { isOnline: false, lastSeen: new Date() }
+        );
+        io.emit("users:update", await User.find({}));
+      } catch (err) {
+        io.emit("users:update", [{ deviceId: socket.deviceId, username: socket.username, isOnline: false }]);
       }
-    });
-   console.log("=== SERVER: Event handlers registered for socket:", socket.id);
- });
+    }
+  });
+});
 
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

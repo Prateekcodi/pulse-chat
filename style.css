@@ -795,6 +795,27 @@ html, body {
   margin-top: 6px;
 }
 
+@media (hover: hover) {
+  .msg-actions {
+    opacity: 0;
+    transition: opacity var(--t-fast);
+  }
+  .msg:hover .msg-actions {
+    opacity: 1;
+  }
+}
+
+.reaction-btn, .delete-btn {
+  background: rgba(13,17,32,0.8);
+  border: 1px solid var(--border-mid);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  transition: all var(--t-fast);
+  backdrop-filter: blur(10px);
+}
+
 .reaction-btn, .delete-btn {
   background: rgba(13,17,32,0.8);
   border: 1px solid var(--border-mid);

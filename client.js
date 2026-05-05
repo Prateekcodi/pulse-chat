@@ -231,6 +231,19 @@ function renderMessage(msg) {
     <button class="reaction-btn" onclick="addReaction('${msg._id}', '❤️')">❤️</button>
     <button class="reaction-btn" onclick="addReaction('${msg._id}', '😂')">😂</button>
   `;
+  
+  // Touch support for mobile - show actions on tap
+  let hideTimer;
+  wrap.addEventListener('touchstart', () => {
+    actions.style.opacity = "1";
+    if (hideTimer) clearTimeout(hideTimer);
+  });
+  wrap.addEventListener('touchend', () => {
+    hideTimer = setTimeout(() => {
+      actions.style.opacity = "";
+    }, 3000);
+  });
+  
   body.appendChild(actions);
 
   wrap.appendChild(body);

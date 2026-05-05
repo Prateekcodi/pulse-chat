@@ -42,8 +42,8 @@
 
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <script>
-    // v2.0 - Modern UI
-    console.log("=== CHAT APP DEBUG START v2.0 ===");
+    // v2.1 - Cache bust
+    "use strict";
     console.log("Socket.IO loaded:", typeof io);
 
     const socket = io({ transports: ["websocket", "polling"] });
@@ -91,13 +91,20 @@
           alert("Please enter your name");
           return;
         }
-        console.log("Emitting user:join with:", { deviceId: myDeviceId, username: name });
-        socket.emit("user:join", { deviceId: myDeviceId, username: name });
-        console.log("Emitted user:join, hiding overlay now");
-        document.getElementById("header-username").textContent = name;
-        loginOverlay.classList.add("hidden");
-        app.classList.remove("hidden");
-        messageInput.focus();
+        try {
+          console.log("Emitting user:join with:", { deviceId: myDeviceId, username: name });
+          socket.emit("user:join", { deviceId: myDeviceId, username: name });
+          console.log("Socket emit done");
+          document.getElementById("header-username").textContent = name;
+          console.log("Hiding overlay");
+          loginOverlay.style.display = "none";
+          console.log("Showing app");
+          app.style.display = "flex";
+          console.log("App should be visible now");
+          messageInput.focus();
+        } catch (e) {
+          console.error("Join error:", e);
+        }
       }
 
       joinBtn.addEventListener("click", joinChat);

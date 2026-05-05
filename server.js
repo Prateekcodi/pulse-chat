@@ -20,10 +20,15 @@ app.use((req, res, next) => {
     "Content-Security-Policy",
     "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval' data: blob:; style-src * 'unsafe-inline' data: blob:; img-src * data: blob:;"
   );
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
   next();
 });
 
-app.use(express.static(__dirname));
+// Serve static files with no cache
+app.use(express.static(__dirname, {
+  maxAge: 0,
+  etag: false
+}));
 app.use(express.json({ limit: "10mb" }));
 
 app.get("*", (req, res) => {

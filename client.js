@@ -128,6 +128,15 @@ function fmtTime(ts) {
   return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
+function formatLastSeenTime(ts) {
+  if (!ts) return "never";
+  const diff = Date.now() - ts;
+  if (diff < 60000) return "now";
+  if (diff < 3600000) return Math.floor(diff / 60000) + "m ago";
+  if (diff < 86400000) return Math.floor(diff / 3600000) + "h ago";
+  return Math.floor(diff / 86400000) + "d ago";
+}
+
 /* ── XSS guard ──────────────────────────────────────────────────── */
 function esc(s) {
   return String(s)
@@ -381,6 +390,8 @@ socket.on("users:update", users => {
 
   users.forEach((u, i) => {
     const name = typeof u === "string" ? u : (u.username || "");
+    const lastSeen = typeof u === "object" ? u.lastSeen : null;
+    const isOnline = typeof u === "object" ? u.isOnline : true;
     const li = document.createElement("li");
     li.style.animationDelay = `${i * 45}ms`;
 
@@ -395,6 +406,14 @@ socket.on("users:update", users => {
 
     li.appendChild(av);
     li.appendChild(span);
+    
+    // Click to show last seen
+    li.onclick = () => {
+      const timeStr = lastSeen ? formatLastSeenTime(new Date(lastSeen)) : "never";
+      const status = isOnline ? "online" : `last seen ${timeStr}`;
+      alert(`${name}\n${status}`);
+    };
+    
     userList.appendChild(li);
   });
 });
@@ -419,6 +438,12 @@ socket.on("server:users", users => {
 
     li.appendChild(av);
     li.appendChild(span);
+    
+    // Click to show basic info (no lastSeen in this event)
+    li.onclick = () => {
+      alert(`${name}\nonline`);
+    };
+    
     userList.appendChild(li);
   });
 });

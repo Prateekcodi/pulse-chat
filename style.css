@@ -464,7 +464,7 @@ html, body {
   font-size: 13.5px;
   font-weight: 400;
   color: var(--tx-secondary);
-  cursor: default;
+  cursor: pointer;
   transition:
     background var(--t-fast),
     color var(--t-fast),

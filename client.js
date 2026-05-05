@@ -193,6 +193,69 @@ function scrollBottom(instant = false) {
   }
 }
 
+/* ── History Pagination ─────────────────────────────────────────────── */
+let hasMoreMessages = true;
+let isLoadingMessages = false;
+let oldestMessageTime = null;
+
+function prependMessages(msgs) {
+  const fragment = document.createDocumentFragment();
+  msgs.forEach((m, i) => {
+    const wrap = createMessageElement(m);
+    if (wrap) fragment.appendChild(wrap);
+  });
+  messagesEl.insertBefore(fragment, messagesEl.firstChild);
+  if (msgs.length > 0) {
+    oldestMessageTime = new Date(msgs[0].timestamp);
+  }
+}
+
+function createMessageElement(msg) {
+  if (!msg) return null;
+  const text      = msg.text || "";
+  const imageUrl  = msg.imageUrl || "";
+  const sender    = msg.senderName || msg.username || "Unknown";
+  const ts        = msg.timestamp || Date.now();
+  const color     = colorFor(sender);
+  const isMine    = msg.senderDeviceId === myDeviceId;
+
+  const wrap = document.createElement("div");
+  wrap.className = "msg";
+  wrap.dataset.id = msg._id;
+  if (msg.senderDeviceId) wrap.dataset.deviceId = msg.senderDeviceId;
+
+  const av = makeAvatar(sender);
+  wrap.appendChild(av);
+
+  const body = document.createElement("div");
+  body.className = "msg-body";
+
+  const meta = document.createElement("div");
+  meta.className = "msg-meta";
+  meta.innerHTML = `
+    <span class="msg-username" style="color:${color}">${esc(sender)}</span>
+    <span class="msg-time">${fmtTime(ts)}${msg.edited ? ' <span class="msg-edited">(edited)</span>' : ''}</span>
+  `;
+  body.appendChild(meta);
+
+  if (text) {
+    const p = document.createElement("p");
+    p.className = "msg-text";
+    p.textContent = text;
+    body.appendChild(p);
+  }
+
+  if (imageUrl) {
+    const img = document.createElement("img");
+    img.className = "msg-image";
+    img.src = imageUrl;
+    body.appendChild(img);
+  }
+
+  wrap.appendChild(body);
+  return wrap;
+}
+
 /* ── System message ─────────────────────────────────────────────── */
 function appendSystemMsg(text) {
   const d = document.createElement("div");
@@ -451,11 +514,23 @@ imageInput.addEventListener("change", e => {
 });
 
 /* ── Socket events ──────────────────────────────────────────────── */
-socket.on("messages:history", msgs => {
+socket.on("messages:history", ({ msgs, hasMore }) => {
+  hasMoreMessages = hasMore !== false;
+  if (msgs.length > 0) {
+    oldestMessageTime = new Date(msgs[0].timestamp);
+  }
   msgs.forEach((m, i) => {
     setTimeout(() => renderMessage(m), i * 18);
   });
   setTimeout(() => scrollBottom(true), msgs.length * 18 + 60);
+});
+
+socket.on("messages:loadmore", ({ messages, hasMore }) => {
+  isLoadingMessages = false;
+  if (messages.length > 0) {
+    prependMessages(messages);
+  }
+  hasMoreMessages = hasMore;
 });
 
 socket.on("message:new", msg => renderMessage(msg));
@@ -576,6 +651,14 @@ function deleteMessage(msgId) {
     socket.emit("message:delete", { messageId: msgId });
   }
 }
+
+/* ── Infinite Scroll ─────────────────────────────────────────────── */
+messagesWrap.addEventListener("scroll", () => {
+  if (messagesWrap.scrollTop < 50 && hasMoreMessages && !isLoadingMessages && oldestMessageTime) {
+    isLoadingMessages = true;
+    socket.emit("message:loadmore", { before: oldestMessageTime });
+  }
+});
 
 /* ── Scroll Controller ─────────────────────────────────────────────── */
 (function initScrollController() {

@@ -86,21 +86,21 @@ io.on("connection", (socket) => {
       const onlineUsers = users.filter(u => u.isOnline === true);
       io.emit("users:update", onlineUsers);
 
-      const messages = await Message.find({}).sort({ timestamp: 1 });
+      const messages = await Message.find({}).sort({ timestamp: -1 }).limit(20);
       const messagesWithUsername = messages.map(m => {
         const msg = m.toObject();
         msg.username = msg.senderName;
         return msg;
-      });
-      socket.emit("messages:history", messagesWithUsername);
-      socket.emit("join:success", { status: "ok" });
+      }).reverse();
+      socket.emit("messages:history", { msgs: messagesWithUsername, hasMore: messages.length === 20 });
+      socket.emit("join:success", { status: "ok", hasMore: messages.length === 20 });
       console.log("=== SERVER: User joined:", username);
     } catch (err) {
       console.error("Database error:", err.message);
       socket.deviceId = deviceId;
       socket.username = username;
       io.emit("users:update", [{ deviceId, username, isOnline: true }]);
-      socket.emit("messages:history", []);
+      socket.emit("messages:history", { msgs: [], hasMore: false });
     }
   });
 
@@ -130,6 +130,27 @@ io.on("connection", (socket) => {
         replyTo: data.replyTo || null
       };
       io.emit("message:new", message);
+    }
+  });
+
+  socket.on("message:loadmore", async ({ before }) => {
+    try {
+      const cutoff = new Date(before);
+      const messages = await Message.find({ timestamp: { $lt: cutoff } })
+        .sort({ timestamp: -1 })
+        .limit(20);
+      const messagesWithUsername = messages.map(m => {
+        const msg = m.toObject();
+        msg.username = msg.senderName;
+        return msg;
+      }).reverse();
+      socket.emit("messages:loadmore", {
+        messages: messagesWithUsername,
+        hasMore: messages.length === 20
+      });
+    } catch (err) {
+      console.error("Load more error:", err.message);
+      socket.emit("messages:loadmore", { messages: [], hasMore: false });
     }
   });
 

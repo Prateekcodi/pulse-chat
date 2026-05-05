@@ -640,3 +640,39 @@ function showInstallBanner() {
     banner.remove();
   };
 }
+
+/* ── Mobile Sidebar Toggle ────────────────────────────────────────── */
+(function initMobileSidebar() {
+  const menuBtn = document.getElementById("menu-btn");
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("sidebar-overlay");
+  
+  if (!menuBtn || !sidebar || !overlay) return;
+  
+  function openSidebar() {
+    sidebar.classList.add("open");
+    overlay.classList.add("show");
+  }
+  
+  function closeSidebar() {
+    sidebar.classList.remove("open");
+    overlay.classList.remove("show");
+  }
+  
+  menuBtn.addEventListener("click", () => {
+    if (sidebar.classList.contains("open")) {
+      closeSidebar();
+    } else {
+      openSidebar();
+    }
+  });
+  
+  overlay.addEventListener("click", closeSidebar);
+  
+  // Close on escape key
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && sidebar.classList.contains("open")) {
+      closeSidebar();
+    }
+  });
+})();

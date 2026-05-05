@@ -1165,10 +1165,83 @@ html, body {
   color: var(--tx-primary);
 }
 
-@media (max-width: 680px) {
-  #scroll-ctrl {
-    width: 44px;
-    height: 44px;
-    right: 12px;
+/* ── Mobile Menu Button ────────────────────────────────────────── */
+.menu-btn {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  width: 40px;
+  height: 40px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid var(--border-mid);
+  border-radius: var(--radius-sm);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 100;
+  transition: all var(--t-fast);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.menu-btn:hover {
+  background: rgba(0,229,176,0.15);
+  border-color: var(--mint);
+  transform: scale(1.08);
+}
+
+.menu-btn svg {
+  color: var(--tx-primary);
+  width: 20px;
+  height: 20px;
+}
+
+/* ── Mobile Overlay ───────────────────────────────────────────────── */
+#sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 95;
+}
+
+#sidebar-overlay.show {
+  display: block;
+}
+
+/* ── Mobile Sidebar ───────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .menu-btn {
+    display: flex;
   }
+
+  #sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 75%;
+    max-width: 280px;
+    height: 100%;
+    transform: translateX(-100%);
+    transition: transform var(--t-mid) var(--ease-out);
+    z-index: 100;
+  }
+
+  #sidebar.open {
+    transform: translateX(0);
+  }
+
+  #chat-area {
+    width: 100%;
+  }
+}
+
+@media (max-width: 680px) {
+   #scroll-ctrl {
+     width: 44px;
+     height: 44px;
+     right: 12px;
+   }
 }

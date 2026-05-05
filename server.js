@@ -9,9 +9,10 @@ const Message = require("./models/Message");
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { origin: "*", methods: ["GET", "POST"] },
-  pingTimeout: 60000,
-  pingInterval: 25000
+   cors: { origin: "*", methods: ["GET", "POST"] },
+   pingTimeout: 60000,
+   pingInterval: 25000,
+   path: "/socket.io"
 });
 
 // CSP headers for socket.io
@@ -39,62 +40,74 @@ mongoose.connect(process.env.MONGO_URI || "mongodb+srv://prateek:test12345@clust
   console.log("Running without database - features will be limited");
 });
 
+console.log("=== SERVER STARTING ===");
+console.log("Server will listen on port:", process.env.PORT || 8080);
+
 io.on("connection", (socket) => {
-  console.log("User connected:", socket.id, "from", socket.handshake.address);
+   console.log("=== SERVER: User connected:", socket.id, "from", socket.handshake.address);
+   console.log("  Socket transport:", socket.conn.transport);
 
-  socket.on("user:join", async ({ deviceId, username }) => {
-    console.log("User joining:", username, "deviceId:", deviceId);
-    try {
-      let user = await User.findOne({ deviceId });
-      if (user) {
-        user.username = username;
-        user.isOnline = true;
-        user.lastSeen = new Date();
-        await user.save();
-      } else {
-        user = await User.create({ deviceId, username, isOnline: true });
-      }
+   socket.on("user:join", async ({ deviceId, username }) => {
+     console.log("=== SERVER: user:join received ===");
+     console.log("  deviceId:", deviceId);
+     console.log("  username:", username);
 
-      socket.deviceId = deviceId;
-      socket.username = username;
+     try {
+       let user = await User.findOne({ deviceId });
+       if (user) {
+         user.username = username;
+         user.isOnline = true;
+         user.lastSeen = new Date();
+         await user.save();
+         console.log("  Updated existing user");
+       } else {
+         user = await User.create({ deviceId, username, isOnline: true });
+         console.log("  Created new user");
+       }
 
-      io.emit("users:update", await User.find({}));
+       socket.deviceId = deviceId;
+       socket.username = username;
 
-      const messages = await Message.find({}).sort({ timestamp: 1 });
-      socket.emit("messages:history", messages);
-      console.log("User joined successfully:", username);
-    } catch (err) {
-      console.error("Database error on user join:", err.message);
-      socket.deviceId = deviceId;
-      socket.username = username;
-      io.emit("users:update", [{ deviceId, username, isOnline: true, lastSeen: new Date() }]);
-      socket.emit("messages:history", []);
-    }
-  });
+       io.emit("users:update", await User.find({}));
 
-  socket.on("message:send", async (data) => {
-    try {
-      const message = await Message.create({
-        text: data.text,
-        senderDeviceId: socket.deviceId,
-        senderName: socket.username,
-        type: "text"
-      });
-      io.emit("message:new", message);
-    } catch (err) {
-      console.error("Database error on message send:", err.message);
-      // Fallback: emit message without persistence
-      const message = {
-        _id: Date.now().toString(),
-        text: data.text,
-        senderDeviceId: socket.deviceId,
-        senderName: socket.username,
-        type: "text",
-        timestamp: new Date()
-      };
-      io.emit("message:new", message);
-    }
-  });
+       const messages = await Message.find({}).sort({ timestamp: 1 });
+       socket.emit("messages:history", messages);
+       console.log("  Sent messages history:", messages.length);
+       console.log("=== SERVER: User joined successfully:", username);
+     } catch (err) {
+       console.error("=== SERVER: Database error on user join:", err.message);
+       socket.deviceId = deviceId;
+       socket.username = username;
+       io.emit("users:update", [{ deviceId, username, isOnline: true, lastSeen: new Date() }]);
+       socket.emit("messages:history", []);
+     }
+   });
+
+socket.on("message:send", async (data) => {
+     console.log("=== SERVER: message:send received ===", data);
+     try {
+       const message = await Message.create({
+         text: data.text,
+         senderDeviceId: socket.deviceId,
+         senderName: socket.username,
+         type: "text"
+       });
+       console.log("  Message saved:", message);
+       io.emit("message:new", message);
+       console.log("  Message broadcast to all");
+     } catch (err) {
+       console.error("=== SERVER: Database error on message send:", err.message);
+       const message = {
+         _id: Date.now().toString(),
+         text: data.text,
+         senderDeviceId: socket.deviceId,
+         senderName: socket.username,
+         type: "text",
+         timestamp: new Date()
+       };
+       io.emit("message:new", message);
+     }
+   });
 
   socket.on("message:edit", async ({ messageId, text }) => {
     try {
@@ -161,22 +174,24 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("disconnect", async () => {
-    if (socket.deviceId) {
-      try {
-        await User.findOneAndUpdate(
-          { deviceId: socket.deviceId },
-          { isOnline: false, lastSeen: new Date() }
-        );
-        io.emit("users:update", await User.find({}));
-      } catch (err) {
-        console.error("Database error on disconnect:", err.message);
-        // Fallback: basic user update
-        io.emit("users:update", [{ deviceId: socket.deviceId, username: socket.username, isOnline: false, lastSeen: new Date() }]);
-      }
-    }
-  });
-});
+socket.on("disconnect", async () => {
+     console.log("=== SERVER: Socket disconnected:", socket.id);
+     if (socket.deviceId) {
+       try {
+         await User.findOneAndUpdate(
+           { deviceId: socket.deviceId },
+           { isOnline: false, lastSeen: new Date() }
+         );
+         io.emit("users:update", await User.find({}));
+         console.log("  User marked offline:", socket.username);
+       } catch (err) {
+         console.error("=== SERVER: Database error on disconnect:", err.message);
+         io.emit("users:update", [{ deviceId: socket.deviceId, username: socket.username, isOnline: false, lastSeen: new Date() }]);
+       }
+     }
+   });
+   console.log("=== SERVER: Event handlers registered for socket:", socket.id);
+ });
 
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

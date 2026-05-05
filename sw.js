@@ -1,9 +1,9 @@
 self.addEventListener('install', (e) => {
   e.waitUntil(
-    caches.open('chat-app-v1').then((cache) => cache.addAll([
+    caches.open('chat-app-v2').then((cache) => cache.addAll([
       '/',
+      '/index.html',
       '/style.css',
-      '/client.js',
       '/manifest.json'
     ]))
   );
@@ -11,6 +11,12 @@ self.addEventListener('install', (e) => {
 
 self.addEventListener('fetch', (e) => {
   e.respondWith(
-    caches.match(e.request).then((response) => response || fetch(e.request))
+    caches.match(e.request).then((response) => {
+      // Bypass cache for HTML to get fresh updates
+      if (e.request.url.includes('.html') || e.request.mode === 'navigate') {
+        return fetch(e.request);
+      }
+      return response || fetch(e.request);
+    })
   );
 });

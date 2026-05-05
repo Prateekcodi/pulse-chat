@@ -766,29 +766,29 @@ html, body {
 
 .msg-actions {
   display: flex;
-  gap: 4px;
-  margin-top: 4px;
-  opacity: 0;
-  transition: opacity var(--t-fast);
-}
-
-.msg:hover .msg-actions {
-  opacity: 1;
+  gap: 6px;
+  margin-top: 6px;
 }
 
 .reaction-btn, .delete-btn {
-  background: rgba(255,255,255,0.06);
-  border: 1px solid var(--border-subtle);
-  font-size: 13px;
+  background: rgba(13,17,32,0.8);
+  border: 1px solid var(--border-mid);
+  font-size: 14px;
   cursor: pointer;
-  padding: 3px 8px;
+  padding: 4px 10px;
   border-radius: var(--radius-sm);
   transition: all var(--t-fast);
+  backdrop-filter: blur(10px);
+}
+
+.reaction-btn {
+  color: var(--tx-secondary);
 }
 
 .reaction-btn:hover { 
   background: rgba(0,229,176,0.15);
   border-color: var(--mint);
+  transform: translateY(-1px);
 }
 
 .delete-btn { 
@@ -798,6 +798,7 @@ html, body {
 .delete-btn:hover { 
   background: rgba(255,107,107,0.15);
   border-color: #ff6b6b;
+  transform: translateY(-1px);
 }
 
 /* System messages */

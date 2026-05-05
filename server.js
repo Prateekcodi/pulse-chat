@@ -12,7 +12,8 @@ const io = new Server(server, {
   cors: { origin: "*", methods: ["GET", "POST"] },
   pingTimeout: 60000,
   pingInterval: 25000,
-  serveClient: true
+  serveClient: true,
+  path: "/socket.io"
 });
 
 app.use(express.static(__dirname));

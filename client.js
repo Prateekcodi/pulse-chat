@@ -1,4 +1,9 @@
-const socket = io({ transports: ["websocket"] });
+const socket = io({ 
+  transports: ["websocket", "polling"],
+  reconnection: true,
+  reconnectionAttempts: 5,
+  timeout: 10000
+});
 
 console.log("client.js loaded, socket created");
 
@@ -8,13 +13,19 @@ if (!myDeviceId) {
   localStorage.setItem("deviceId", myDeviceId);
 }
 
+console.log("Device ID:", myDeviceId);
+
 socket.on("connect", () => {
   console.log("Socket connected:", socket.id);
+  joinBtn.disabled = false;
+  joinBtn.textContent = "Join";
 });
 
 socket.on("connect_error", (err) => {
   console.error("Socket connection error:", err.message);
-  alert("Failed to connect to server. Please refresh the page.");
+  joinBtn.disabled = false;
+  joinBtn.textContent = "Join";
+  alert("Connection failed. Retrying...");
 });
 
 socket.on("disconnect", (reason) => {
@@ -22,7 +33,7 @@ socket.on("disconnect", (reason) => {
 });
 
 socket.on("connect_timeout", (timeout) => {
-  console.error("Connection timeout:", timeout);
+  console.error("Connection timeout");
 });
 
 const loginOverlay = document.getElementById("login-overlay");
@@ -44,18 +55,28 @@ function joinChat() {
   if (!name) return;
   console.log("Joining chat with name:", name);
   
+  if (!socket.connected) {
+    console.log("Socket not connected, waiting...");
+    socket.connect();
+  }
+  
   joinBtn.disabled = true;
-  joinBtn.textContent = "Joining...";
+  joinBtn.textContent = "Connecting...";
   
-  socket.emit("user:join", { deviceId: myDeviceId, username: name }, (response) => {
-    joinBtn.disabled = false;
-    joinBtn.textContent = "Join";
-  });
+  const handleJoin = () => {
+    socket.emit("user:join", { deviceId: myDeviceId, username: name });
+    headerUsername.textContent = name;
+    loginOverlay.classList.add("hidden");
+    app.classList.remove("hidden");
+    messageInput.focus();
+    socket.off("connect", handleJoin);
+  };
   
-  headerUsername.textContent = name;
-  loginOverlay.classList.add("hidden");
-  app.classList.remove("hidden");
-  messageInput.focus();
+  if (socket.connected) {
+    handleJoin();
+  } else {
+    socket.on("connect", handleJoin);
+  }
 }
 
 joinBtn.addEventListener("click", joinChat);

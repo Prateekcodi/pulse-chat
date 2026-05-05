@@ -128,13 +128,28 @@ function fmtTime(ts) {
   return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-function formatLastSeenTime(ts) {
+function formatLastSeenPrecise(ts) {
   if (!ts) return "never";
-  const diff = Date.now() - ts;
-  if (diff < 60000) return "now";
-  if (diff < 3600000) return Math.floor(diff / 60000) + "m ago";
-  if (diff < 86400000) return Math.floor(diff / 3600000) + "h ago";
-  return Math.floor(diff / 86400000) + "d ago";
+  const diff = Date.now() - new Date(ts);
+  if (diff < 10000) return "online";
+  if (diff < 60000) return `${Math.floor(diff / 1000)}s ago`;
+  if (diff < 3600000) return `${Math.floor(diff / 60000)}m ${Math.floor((diff % 60000) / 1000)}s ago`;
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ${Math.floor((diff % 3600000) / 60000)}m ago`;
+  return `${Math.floor(diff / 86400000)}d ago`;
+}
+
+function showUserInfo(name, lastSeen, isOnline) {
+  let tooltip = document.getElementById("user-tooltip");
+  if (!tooltip) {
+    tooltip = document.createElement("div");
+    tooltip.id = "user-tooltip";
+    tooltip.className = "user-tooltip";
+    document.body.appendChild(tooltip);
+  }
+  const timeStr = isOnline ? "online" : formatLastSeenPrecise(lastSeen);
+  tooltip.innerHTML = `<strong>${name}</strong><br><span>${timeStr}</span>`;
+  tooltip.classList.add("show");
+  setTimeout(() => tooltip.classList.remove("show"), 3000);
 }
 
 /* ── XSS guard ──────────────────────────────────────────────────── */
@@ -182,6 +197,10 @@ function renderMessage(msg) {
   if (msg.senderDeviceId) wrap.dataset.deviceId = msg.senderDeviceId;
 
   const av = makeAvatar(sender);
+  av.style.cursor = "pointer";
+  av.onclick = () => {
+    showUserInfo(sender, null, true);
+  };
   wrap.appendChild(av);
 
   const body = document.createElement("div");
@@ -409,9 +428,7 @@ socket.on("users:update", users => {
     
     // Click to show last seen
     li.onclick = () => {
-      const timeStr = lastSeen ? formatLastSeenTime(new Date(lastSeen)) : "never";
-      const status = isOnline ? "online" : `last seen ${timeStr}`;
-      alert(`${name}\n${status}`);
+      showUserInfo(name, lastSeen ? new Date(lastSeen) : null, isOnline);
     };
     
     userList.appendChild(li);
@@ -441,7 +458,7 @@ socket.on("server:users", users => {
     
     // Click to show basic info (no lastSeen in this event)
     li.onclick = () => {
-      alert(`${name}\nonline`);
+      showUserInfo(name, null, true);
     };
     
     userList.appendChild(li);

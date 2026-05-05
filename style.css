@@ -847,6 +847,37 @@ html, body {
   transform: translateY(-1px);
 }
 
+/* User tooltip */
+.user-tooltip {
+  position: fixed;
+  background: rgba(13,17,32,0.95);
+  border: 1px solid var(--border-mid);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--tx-primary);
+  backdrop-filter: blur(10px);
+  z-index: 1000;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all var(--t-fast);
+  pointer-events: none;
+}
+
+.user-tooltip.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.user-tooltip strong {
+  color: var(--mint);
+}
+
+.user-tooltip span {
+  color: var(--tx-secondary);
+  font-size: 11px;
+}
+
 /* System messages */
 .msg-system {
   text-align: center;

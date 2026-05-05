@@ -202,6 +202,27 @@ function appendSystemMsg(text) {
   scrollBottom();
 }
 
+/* ── Reply State ─────────────────────────────────────────────────── */
+let replyTo = null;
+
+function setReply(msgId, username, text) {
+  replyTo = { id: msgId, username, text };
+  const preview = document.getElementById("reply-preview");
+  const replyUsername = document.getElementById("reply-username");
+  const replyText = document.getElementById("reply-text");
+  if (preview && replyUsername && replyText) {
+    replyUsername.textContent = username;
+    replyText.textContent = text.length > 60 ? text.slice(0, 60) + "…" : text;
+    preview.classList.remove("hidden");
+  }
+}
+
+function clearReply() {
+  replyTo = null;
+  const preview = document.getElementById("reply-preview");
+  if (preview) preview.classList.add("hidden");
+}
+
 /* ── Render a chat message ──────────────────────────────────────── */
 function renderMessage(msg) {
   if (!msg) return;
@@ -243,6 +264,17 @@ function renderMessage(msg) {
   `;
   body.appendChild(meta);
 
+  // Reply indicator (shown before message text)
+  if (msg.replyTo) {
+    const replyDiv = document.createElement("div");
+    replyDiv.className = "msg-reply";
+    replyDiv.innerHTML = `
+      <span class="msg-reply-label">↳ ${esc(msg.replyTo.username)}</span>
+      <span class="msg-reply-text">${esc(msg.replyTo.text.length > 60 ? msg.replyTo.text.slice(0, 60) + "…" : msg.replyTo.text)}</span>
+    `;
+    body.appendChild(replyDiv);
+  }
+
   if (text) {
     const p = document.createElement("div");
     p.className = "msg-text";
@@ -282,8 +314,10 @@ function renderMessage(msg) {
 
   const actions = document.createElement("div");
   actions.className = "msg-actions";
+  const escapedText = esc(text).replace(/'/g, "\\'").replace(/\n/g, "\\n");
   actions.innerHTML = `
     ${canDelete ? `<button class="delete-btn" onclick="deleteMessage('${msg._id}')" title="Delete">🗑️</button>` : ''}
+    <button class="reply-btn" onclick="setReply('${msg._id}', '${esc(sender)}', '${escapedText}')" title="Reply">↳</button>
     <button class="reaction-btn" onclick="addReaction('${msg._id}', '👍')">👍</button>
     <button class="reaction-btn" onclick="addReaction('${msg._id}', '❤️')">❤️</button>
     <button class="reaction-btn" onclick="addReaction('${msg._id}', '😂')">😂</button>
@@ -375,13 +409,22 @@ function sendMessage() {
   sendBtn.style.transform = "scale(0.88)";
   setTimeout(() => { sendBtn.style.transform = ""; }, 140);
 
-  socket.emit("message:send", { text });
+  const payload = { text };
+  if (replyTo) {
+    payload.replyTo = { id: replyTo.id, username: replyTo.username, text: replyTo.text };
+  }
+
+  socket.emit("message:send", payload);
+  clearReply();
   messageInput.value = "";
   messageInput.focus();
 }
 
 sendBtn.addEventListener("click", sendMessage);
 messageInput.addEventListener("keydown", e => { if (e.key === "Enter") sendMessage(); });
+
+/* ── Cancel reply ─────────────────────────────────────────────────── */
+document.getElementById("cancel-reply").addEventListener("click", clearReply);
 
 /* ── Image send ─────────────────────────────────────────────────── */
 imageBtn.addEventListener("click", () => imageInput.click());

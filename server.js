@@ -91,7 +91,8 @@ io.on("connection", (socket) => {
         text: data.text,
         senderDeviceId: socket.deviceId,
         senderName: socket.username,
-        type: "chat"
+        type: "chat",
+        replyTo: data.replyTo || null
       });
       const msgToSend = message.toObject();
       msgToSend.username = msgToSend.senderName;
@@ -105,7 +106,8 @@ io.on("connection", (socket) => {
         senderName: socket.username,
         username: socket.username,
         type: "chat",
-        timestamp: new Date()
+        timestamp: new Date(),
+        replyTo: data.replyTo || null
       };
       io.emit("message:new", message);
     }

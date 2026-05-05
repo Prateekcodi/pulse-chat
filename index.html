@@ -122,7 +122,7 @@
               <polyline points="16 17 21 12 16 7"/>
               <line x1="21" y1="12" x2="9" y2="12"/>
             </svg>
-          </button>
+</button>
         </div>
       </header>
 
@@ -133,6 +133,18 @@
             <p class="welcome-text">Beginning of <strong>#general</strong></p>
           </div>
           <div id="messages"></div>
+        </div>
+      </div>
+
+      <!-- Reply Preview -->
+      <div id="reply-preview" class="hidden">
+        <div class="reply-content">
+          <div class="reply-info">
+            <span class="reply-label">Replying to</span>
+            <span id="reply-username" class="reply-username"></span>
+          </div>
+          <span id="reply-text" class="reply-text"></span>
+          <button id="cancel-reply" class="cancel-reply" title="Cancel reply">✕</button>
         </div>
       </div>
 

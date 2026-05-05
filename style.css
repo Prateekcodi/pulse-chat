@@ -795,6 +795,41 @@ html, body {
   margin-top: 6px;
 }
 
+.reply-btn {
+  background: rgba(0,229,176,0.1);
+  border: 1px solid rgba(0,229,176,0.3);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  transition: all var(--t-fast);
+}
+
+.reply-btn:hover {
+  background: rgba(0,229,176,0.2);
+  transform: scale(1.08);
+}
+
+/* Message reply indicator */
+.msg-reply {
+  padding: 6px 10px;
+  margin-bottom: 4px;
+  background: rgba(0,229,176,0.05);
+  border-left: 2px solid var(--mint);
+  border-radius: var(--radius-xs);
+  font-size: 12px;
+}
+
+.msg-reply-label {
+  color: var(--mint);
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+.msg-reply-text {
+  color: var(--tx-secondary);
+}
+
 @media (hover: hover) {
   .msg-actions {
     opacity: 0;
@@ -923,6 +958,71 @@ html, body {
 .msg-image:hover { transform: scale(1.015); }
 
 /* ══════════════════ INPUT BAR ══════════════════════════════════════ */
+
+/* Reply Preview */
+#reply-preview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 24px;
+  background: rgba(0,229,176,0.06);
+  border-top: 1px solid rgba(0,229,176,0.2);
+  border-left: 3px solid var(--mint);
+}
+
+#reply-preview.hidden {
+  display: none;
+}
+
+.reply-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.reply-info {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.reply-label {
+  color: var(--tx-muted);
+}
+
+.reply-username {
+  color: var(--mint);
+  font-weight: 600;
+}
+
+.reply-text {
+  color: var(--tx-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 300px;
+}
+
+.cancel-reply {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--tx-muted);
+  cursor: pointer;
+  font-size: 14px;
+  border-radius: 3px;
+}
+
+.cancel-reply:hover {
+  color: var(--tx-primary);
+  background: rgba(255,255,255,0.1);
+}
 
 #input-bar {
   height: var(--input-h);

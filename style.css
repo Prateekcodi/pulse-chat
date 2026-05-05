@@ -775,6 +775,11 @@ html, body {
   color: var(--tx-muted);
 }
 
+.msg-status {
+  margin-left: 4px;
+  font-size: 11px;
+}
+
 .msg-text {
   font-size: 14.5px;
   color: var(--tx-secondary);

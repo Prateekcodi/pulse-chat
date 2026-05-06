@@ -10,6 +10,7 @@ const messageSchema = new mongoose.Schema({
   text: { type: String },
   senderDeviceId: { type: String, required: true },
   senderName: { type: String, required: true },
+  recipientDeviceId: { type: String }, // null for group chat, set for DM
   timestamp: { type: Date, default: Date.now },
   edited: { type: Boolean, default: false },
   type: { type: String, enum: ["chat", "image"], default: "chat" },

@@ -26,6 +26,9 @@
   --mint-dim:      #00c896;
   --mint-glow:     rgba(0,229,176,0.18);
   --mint-faint:    rgba(0,229,176,0.06);
+  --purple:        #7c6af7;
+  --purple-dim:    #6a56e6;
+  --purple-glow:   rgba(124,106,247,0.18);
   --ember:         #ff7b45;
   --ember-glow:    rgba(255,123,69,0.18);
 
@@ -1350,3 +1353,226 @@ html, body {
      right: 12px;
    }
 }
+
+/* ── GIF Modal ─────────────────────────────────────────────────────── */
+ #gif-modal {
+   display: none;
+   position: fixed;
+   inset: 0;
+   background: rgba(0,0,0,0.95);
+   z-index: 2000;
+   padding: 20px;
+   overflow-y: auto;
+ }
+
+ #gif-modal.show {
+   display: block;
+ }
+
+ .gif-content {
+   max-width: 900px;
+   margin: 0 auto;
+ }
+
+ .gif-header {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   padding: 16px 20px;
+   background: rgba(255,255,255,0.05);
+   border-radius: var(--radius-md);
+   margin-bottom: 16px;
+   border: 1px solid var(--border-subtle);
+ }
+
+ .gif-header span {
+   color: var(--purple);
+   font-family: var(--font-display);
+   font-weight: 600;
+   font-size: 16px;
+ }
+
+ .gif-close {
+   width: 32px;
+   height: 32px;
+   border: none;
+   background: rgba(255,255,255,0.1);
+   color: var(--tx-primary);
+   border-radius: var(--radius-sm);
+   cursor: pointer;
+   font-size: 18px;
+ }
+
+ .gif-close:hover {
+   background: rgba(255,255,255,0.2);
+ }
+
+ .gif-grid {
+   display: grid;
+   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+   gap: 12px;
+ }
+
+ .gif-item {
+   aspect-ratio: 1;
+   border-radius: var(--radius-md);
+   overflow: hidden;
+   cursor: pointer;
+   border: 1px solid var(--border-subtle);
+   transition: all var(--t-fast);
+ }
+
+ .gif-item:hover {
+   transform: scale(1.05);
+   border-color: var(--purple);
+ }
+
+ .gif-item img {
+   width: 100%;
+   height: 100%;
+   object-fit: cover;
+ }
+
+ .gif-loading {
+   grid-column: 1 / -1;
+   text-align: center;
+   padding: 40px;
+   color: var(--tx-muted);
+ }
+ .friend-request {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+   padding: 8px 12px;
+   background: linear-gradient(135deg, rgba(0,229,176,0.08) 0%, rgba(124,106,247,0.08) 100%);
+   border: 1px solid rgba(0,229,176,0.2);
+   border-radius: var(--radius-sm);
+   font-size: 12px;
+   color: var(--tx-primary);
+   margin-bottom: 4px;
+   animation: friendRequestSlide 0.4s var(--spring) both;
+ }
+
+ @keyframes friendRequestSlide {
+   from { opacity: 0; transform: translateY(-10px); }
+   to   { opacity: 1; transform: none; }
+ }
+
+ .friend-request span {
+   flex: 1;
+ }
+
+ .friend-request button {
+   padding: 6px 12px;
+   border: none;
+   border-radius: var(--radius-sm);
+   font-size: 11px;
+   font-weight: 600;
+   cursor: pointer;
+   transition: all var(--t-fast);
+   position: relative;
+   overflow: hidden;
+ }
+
+ .friend-request button::before {
+   content: '';
+   position: absolute;
+   inset: 0;
+   background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+   opacity: 0;
+   transition: opacity var(--t-fast);
+ }
+
+ .friend-request button:hover::before {
+   opacity: 1;
+ }
+
+ .friend-request button:first-of-type {
+   background: linear-gradient(135deg, var(--mint) 0%, var(--mint-dim) 100%);
+   color: #021a14;
+   box-shadow: 0 2px 8px rgba(0,229,176,0.25);
+ }
+
+ .friend-request button:first-of-type:hover {
+   transform: translateY(-1px);
+   box-shadow: 0 4px 12px rgba(0,229,176,0.4);
+ }
+
+ .friend-request button:first-of-type:active {
+   transform: scale(0.95);
+ }
+
+ .friend-request button:last-of-type {
+   background: rgba(255,255,255,0.06);
+   color: var(--tx-secondary);
+   border: 1px solid var(--border-subtle);
+ }
+
+ .friend-request button:last-of-type:hover {
+   background: rgba(255,255,255,0.1);
+   color: var(--tx-primary);
+   border-color: var(--border-mid);
+   transform: translateY(-1px);
+ }
+
+ .friend-request button:last-of-type:active {
+   transform: scale(0.95);
+ }
+
+/* Friend list item styling */
+ #user-list li.friend-item {
+   position: relative;
+ }
+
+ #user-list li.friend-item::before {
+   content: '';
+   position: absolute;
+   left: 0;
+   top: 50%;
+   transform: translateY(-50%);
+   width: 6px;
+   height: 6px;
+   background: var(--mint);
+   border-radius: 50%;
+ }
+
+ /* Add friend button in user list */
+ #user-list li button.add-friend-btn {
+   width: 24px;
+   height: 24px;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   background: rgba(0,229,176,0.1);
+   border: 1px solid rgba(0,229,176,0.3);
+   border-radius: 50%;
+   color: var(--mint);
+   font-size: 14px;
+   font-weight: 600;
+   cursor: pointer;
+   transition: all var(--t-fast);
+   margin-left: auto;
+   flex-shrink: 0;
+ }
+
+ #user-list li button.add-friend-btn:hover {
+   background: rgba(0,229,176,0.2);
+   border-color: var(--mint);
+   transform: scale(1.1) rotate(90deg);
+   box-shadow: 0 0 12px rgba(0,229,176,0.4);
+ }
+
+ #user-list li button.add-friend-btn:active {
+   transform: scale(0.9) rotate(90deg);
+ }
+
+ /* Section headers */
+ #user-list li.section-header {
+   padding: 6px 12px 2px;
+   font-size: 11px;
+   font-weight: 600;
+   color: var(--tx-secondary);
+   pointer-events: none;
+   text-transform: uppercase;
+   letter-spacing: 0.5px;
+ }

@@ -163,8 +163,8 @@ function closeGifPicker() {
 async function loadGifs() {
   const grid = document.getElementById("gif-grid");
   try {
-    // Use bestadultgifs.com - fetch trending/adult gifs via RSS
-    const response = await fetch("https://bestadultgifs.com/feed/");
+    // Use a CORS proxy to fetch RSS from bestadultgifs.com
+    const response = await fetch("https://api.codetabs.com/v1/proxy?quest=https://bestadultgifs.com/feed/");
     const text = await response.text();
     const parser = new DOMParser();
     const xml = parser.parseFromString(text, "text/xml");
@@ -174,7 +174,7 @@ async function loadGifs() {
     items.forEach((item, i) => {
       if (i >= 18) return;
       const content = item.querySelector("content\\:encoded")?.textContent || item.querySelector("description")?.textContent || "";
-      const imgMatch = content.match(/<img[^>]+src="([^">]+)"/);
+      const imgMatch = content.match(/(https?:\/\/[^"'\s>]+\.(gif|jpg|jpeg|png))/i);
       const imgUrl = imgMatch ? imgMatch[1] : null;
       if (imgUrl) {
         html += `<div class="gif-item" onclick="sendGif('${imgUrl}')">
@@ -186,11 +186,17 @@ async function loadGifs() {
     if (html) {
       grid.innerHTML = html;
     } else {
-      grid.innerHTML = '<div class="gif-loading">No GIFs available</div>';
+      throw new Error("No GIFs found in feed");
     }
   } catch (err) {
     console.error("GIF load error:", err);
-    grid.innerHTML = '<div class="gif-loading">Failed to load GIFs</div>';
+    // Fallback to Giphy trending (not adult - but working)
+    grid.innerHTML = `
+      <div class="gif-item" onclick="sendGif('https://media.giphy.com/media/3o7aTbR2nuGpxZLaDK/giphy.gif')"><img src="https://media.giphy.com/media/3o7aTbR2nuGpxZLaDK/giphy.gif"></div>
+      <div class="gif-item" onclick="sendGif('https://media.giphy.com/media/l0HlBO7eyXzSZkJri/giphy.gif')"><img src="https://media.giphy.com/media/l0HlBO7eyXzSZkJri/giphy.gif"></div>
+      <div class="gif-item" onclick="sendGif('https://media.giphy.com/media/3oKIPnmiqNhZIueLPW/giphy.gif')"><img src="https://media.giphy.com/media/3oKIPnmiqNhZIueLPW/giphy.gif"></div>
+      <div class="gif-item" onclick="sendGif('https://media.giphy.com/media/LXONhtIIG0YAo/giphy.gif')"><img src="https://media.giphy.com/media/LXONhtIIG0YAo/giphy.gif"></div>
+    `;
   }
 }
 

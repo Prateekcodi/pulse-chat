@@ -113,36 +113,38 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("message:send", async (data) => {
-    try {
-      const message = await Message.create({
-        text: data.text,
-        senderDeviceId: socket.deviceId,
-        senderName: socket.username,
-        recipientDeviceId: data.recipientId || null,
-        type: "chat",
-        replyTo: data.replyTo || null
-      });
-      const msgToSend = message.toObject();
-      msgToSend.username = msgToSend.senderName;
-      msgToSend.deliveredTo = [];
-      // Send to recipient only for DM, or broadcast for group chat
-      if (data.recipientId) {
-        io.to(deviceToSocket.get(data.recipientId))?.emit("message:new", msgToSend);
-        socket.emit("message:new", msgToSend);
-      } else {
-        io.emit("message:new", msgToSend);
-      }
-    } catch (err) {
+socket.on("message:send", async (data) => {
+   try {
+     const message = await Message.create({
+       text: data.text,
+       imageUrl: data.imageUrl || null,
+       senderDeviceId: socket.deviceId,
+       senderName: socket.username,
+       recipientDeviceId: data.recipientId || null,
+       type: data.imageUrl ? "image" : "chat",
+       replyTo: data.replyTo || null
+     });
+     const msgToSend = message.toObject();
+     msgToSend.username = msgToSend.senderName;
+     msgToSend.deliveredTo = [];
+     // Send to recipient only for DM, or broadcast for group chat
+     if (data.recipientId) {
+       io.to(deviceToSocket.get(data.recipientId))?.emit("message:new", msgToSend);
+       socket.emit("message:new", msgToSend);
+     } else {
+       io.emit("message:new", msgToSend);
+     }
+} catch (err) {
       console.error("Database error on message send:", err.message);
       const message = {
         _id: Date.now().toString(),
         id: Date.now().toString(),
-        text: data.text,
+        text: data.text || "",
+        imageUrl: data.imageUrl || null,
         senderDeviceId: socket.deviceId,
         senderName: socket.username,
         username: socket.username,
-        type: "chat",
+        type: data.imageUrl ? "image" : "chat",
         timestamp: new Date(),
         recipientDeviceId: data.recipientId || null,
         replyTo: data.replyTo || null,
@@ -157,18 +159,19 @@ io.on("connection", (socket) => {
     }
   });
 
-  // DM-specific handlers
-  socket.on("dm:send", async (data) => {
-    try {
-      const message = await Message.create({
-        text: data.text,
-        senderDeviceId: socket.deviceId,
-        senderName: socket.username,
-        recipientDeviceId: data.recipientId,
-        type: "chat"
-      });
-      const msgToSend = message.toObject();
-      msgToSend.username = msgToSend.senderName;
+// DM-specific handlers
+   socket.on("dm:send", async (data) => {
+     try {
+       const message = await Message.create({
+         text: data.text,
+         imageUrl: data.imageUrl || null,
+         senderDeviceId: socket.deviceId,
+         senderName: socket.username,
+         recipientDeviceId: data.recipientId,
+         type: data.imageUrl ? "image" : "chat"
+       });
+       const msgToSend = message.toObject();
+       msgToSend.username = msgToSend.senderName;
       const recipientSocketId = deviceToSocket.get(data.recipientId);
       if (recipientSocketId) {
         io.to(recipientSocketId).emit("dm:new", msgToSend);
@@ -177,9 +180,26 @@ io.on("connection", (socket) => {
         socket.emit("dm:new", msgToSend);
       }
     } catch (err) {
-      console.error("DM send error:", err.message);
+console.error("DM send error:", err.message);
+      const message = {
+        _id: Date.now().toString(),
+        text: data.text,
+        imageUrl: data.imageUrl || null,
+        senderDeviceId: socket.deviceId,
+        senderName: socket.username,
+        username: socket.username,
+        type: data.imageUrl ? "image" : "chat",
+        timestamp: new Date()
+      };
+      const recipientSocketId = deviceToSocket.get(data.recipientId);
+      if (recipientSocketId) {
+        io.to(recipientSocketId).emit("dm:new", message);
+        socket.emit("dm:new", message);
+      } else {
+        socket.emit("dm:new", message);
+      }
     }
-  });
+   });
 
   socket.on("dm:load", async ({ recipientId }) => {
     try {

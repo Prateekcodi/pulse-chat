@@ -201,13 +201,27 @@ async function loadGifs() {
 }
 
 function sendGif(url) {
-  if (myUsername && currentChat.type === "dm") {
-    socket.emit("dm:send", { text: "", imageUrl: url, recipientId: currentChat.recipientId });
-  } else if (myUsername) {
-    socket.emit("message:send", { text: "", imageUrl: url });
-  }
-  closeGifPicker();
-}
+   if (myUsername) {
+     const tempId = "gif_" + Date.now();
+     const tempMsg = {
+       _id: tempId,
+       senderDeviceId: myDeviceId,
+       senderName: myUsername,
+       username: myUsername,
+       type: "image",
+       imageUrl: url,
+       timestamp: new Date()
+     };
+     renderMessage(tempMsg);
+     
+     if (currentChat.type === "dm") {
+       socket.emit("dm:send", { text: "", imageUrl: url, recipientId: currentChat.recipientId });
+     } else {
+       socket.emit("message:send", { text: "", imageUrl: url });
+     }
+   }
+   closeGifPicker();
+ }
 
 function colorFor(name) {
   let h = 0;

@@ -351,13 +351,12 @@ function createMessageElement(msg) {
     body.appendChild(p);
   }
 
-  if (imageUrl) {
-    const img = document.createElement("img");
-    img.className = "msg-image";
-    img.src = imageUrl;
-    img.dataset.viewOnce = msg.viewOnce || false;
-    body.appendChild(img);
-  }
+if (imageUrl) {
+     const img = document.createElement("img");
+     img.className = "msg-image";
+     img.src = imageUrl;
+     body.appendChild(img);
+   }
 
   const status = document.createElement("span");
   status.className = "msg-status";
@@ -481,53 +480,16 @@ function renderMessage(msg) {
     body.appendChild(p);
   }
 
-  if (imageUrl) {
-    const img = document.createElement("img");
-    img.className = "msg-image";
-    img.src = imageUrl;
-    img.alt = "Shared image";
-    img.loading = "lazy";
-    img.style.cursor = "pointer";
-    img.dataset.viewOnce = msg.viewOnce || false;
-    
-    const openImage = () => {
-      if (img.dataset.viewOnce === "false") {
-        window.open(imageUrl, "_blank");
-        setTimeout(() => {
-          socket.emit("image:seen", msg._id);
-        }, 1000);
-      } else {
-        const modal = document.createElement("div");
-        modal.id = "view-once-modal";
-        modal.style.cssText = `
-          position:fixed;top:0;left:0;width:100%;height:100%;
-          background:rgba(0,0,0,0.95);display:flex;align-items:center;justify-content:center;z-index:10000;
-        `;
-        const viewerImg = document.createElement("img");
-        viewerImg.src = imageUrl;
-        viewerImg.style.maxWidth = "90%";
-        viewerImg.style.maxHeight = "90%";
-        viewerImg.style.borderRadius = "8px";
-        modal.appendChild(viewerImg);
-        document.body.appendChild(modal);
-        
-        setTimeout(() => {
-          if (document.getElementById("view-once-modal")) {
-            document.getElementById("view-once-modal").remove();
-            const el = document.querySelector(`[data-id="${msg._id}"] .msg-image`);
-            if (el) {
-              el.style.filter = "blur(8px)";
-              el.style.pointerEvents = "none";
-            }
-          }
-          socket.emit("image:seen", msg._id);
-        }, 20000);
-      }
-    };
-    
-    img.onclick = openImage;
-    body.appendChild(img);
-  }
+if (imageUrl) {
+     const img = document.createElement("img");
+     img.className = "msg-image";
+     img.src = imageUrl;
+     img.alt = "Shared image";
+     img.loading = "lazy";
+     img.style.cursor = "pointer";
+     img.onclick = () => window.open(imageUrl, "_blank");
+     body.appendChild(img);
+   }
 
   const status = document.createElement("span");
   status.className = "msg-status";
@@ -650,7 +612,7 @@ if (gifBtn) {
   gifBtn.addEventListener("click", showGifPicker);
 }
 
-/* Right-click for view-once image */
+/* Right-click for image send */
 imageBtn.addEventListener("contextmenu", (e) => {
   e.preventDefault();
   getFileFromUser().then(file => {
@@ -668,11 +630,10 @@ imageBtn.addEventListener("contextmenu", (e) => {
           username: myUsername,
           type: "image",
           imageUrl: imageUrl,
-          timestamp: new Date(),
-          viewOnce: true
+          timestamp: new Date()
         };
         renderMessage(tempMsg);
-        socket.emit("image:send", { imageUrl, viewOnce: true });
+        socket.emit("image:send", { imageUrl });
         imageBtn.disabled = false;
         imageBtn.style.opacity = "";
         imageInput.value = "";
@@ -711,12 +672,12 @@ imageInput.addEventListener("change", e => {
       timestamp: new Date()
     };
     renderMessage(tempMsg);
-    socket.emit("image:send", { imageUrl, viewOnce: false });
+    socket.emit("image:send", { imageUrl });
     imageBtn.disabled = false;
     imageBtn.style.opacity = "";
     imageInput.value = "";
   };
-reader.readAsDataURL(file);
+  reader.readAsDataURL(file);
 });
 
 /* ── Socket events ──────────────────────────────────────────────── */
@@ -740,19 +701,19 @@ socket.on("messages:loadmore", ({ messages, hasMore }) => {
 });
 
 socket.on("message:new", msg => {
-   // Don't show DMs in general chat view
-   if (msg.recipientDeviceId && currentChat.type !== "dm") return;
-   // Don't show group messages in DM view
-   if (!msg.recipientDeviceId && currentChat.type === "dm") return;
-   const isMine = msg.senderDeviceId === myDeviceId;
-   renderMessage(msg);
-   // Mark as seen after render
-   if (!isMine) {
-     setTimeout(() => {
-       socket.emit("message:seen", { messageId: msg._id });
-     }, 500);
-   }
-});
+    // Don't show DMs in general chat view
+    if (msg.recipientDeviceId && currentChat.type !== "dm") return;
+    // Don't show group messages in DM view
+    if (!msg.recipientDeviceId && currentChat.type === "dm") return;
+    const isMine = msg.senderDeviceId === myDeviceId;
+    renderMessage(msg);
+    // Mark as seen after render
+    if (!isMine) {
+      setTimeout(() => {
+        socket.emit("message:seen", { messageId: msg._id });
+      }, 500);
+    }
+  });
 
 socket.on("message:delivered", ({ messageId }) => {
   const el = document.querySelector(`[data-id="${messageId}"] .msg-status`);

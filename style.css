@@ -937,16 +937,15 @@ html, body {
 
 /* Image in message */
 .msg-image {
-  max-width: 340px;
-  max-height: 280px;
-  border-radius: var(--radius-md);
-  margin-top: 6px;
-  border: 1px solid var(--border-subtle);
-  object-fit: cover;
-  display: block;
-  transition: transform var(--t-mid) var(--ease-out);
-  filter: blur(8px) brightness(0.7);
-}
+   max-width: 340px;
+   max-height: 280px;
+   border-radius: var(--radius-md);
+   margin-top: 6px;
+   border: 1px solid var(--border-subtle);
+   object-fit: cover;
+   display: block;
+   transition: transform var(--t-mid) var(--ease-out);
+ }
 
 .image-overlay {
   position: absolute;

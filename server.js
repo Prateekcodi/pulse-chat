@@ -378,43 +378,32 @@ socket.on("friend:list", async () => {
     }
   });
 
-  socket.on("image:send", async (data) => {
-    console.log("=== SERVER: image:send received ===", { 
-      deviceId: socket.deviceId, 
-      username: socket.username,
-      hasImageUrl: !!data.imageUrl,
-      viewOnce: data.viewOnce
-    });
-    try {
-      const message = await Message.create({
-        imageUrl: data.imageUrl,
-        senderDeviceId: socket.deviceId,
-        senderName: socket.username,
-        type: "image",
-        seenBy: [socket.deviceId],
-        viewOnce: data.viewOnce || false
-      });
-      const msgToSend = message.toObject();
-      msgToSend.username = msgToSend.senderName;
-      io.emit("message:new", msgToSend);
-      console.log("=== SERVER: Image saved with id:", message._id);
-    } catch (err) {
-      console.error("Image send error:", err.message);
-      const message = {
-        _id: Date.now().toString(),
-        id: Date.now().toString(),
-        imageUrl: data.imageUrl,
-        senderDeviceId: socket.deviceId,
-        senderName: socket.username,
-        username: socket.username,
-        type: "image",
-        timestamp: new Date(),
-        seenBy: [socket.deviceId],
-        viewOnce: data.viewOnce || false
-      };
-      io.emit("message:new", message);
-    }
-  });
+socket.on("image:send", async (data) => {
+     try {
+       const message = await Message.create({
+         imageUrl: data.imageUrl,
+         senderDeviceId: socket.deviceId,
+         senderName: socket.username,
+         type: "image"
+       });
+       const msgToSend = message.toObject();
+       msgToSend.username = msgToSend.senderName;
+       socket.broadcast.emit("message:new", msgToSend);
+     } catch (err) {
+       console.error("Image send error:", err.message);
+       const message = {
+         _id: Date.now().toString(),
+         id: Date.now().toString(),
+         imageUrl: data.imageUrl,
+         senderDeviceId: socket.deviceId,
+         senderName: socket.username,
+         username: socket.username,
+         type: "image",
+         timestamp: new Date()
+       };
+       socket.broadcast.emit("message:new", message);
+     }
+   });
 
   socket.on("message:delivered", async ({ messageId }) => {
     try {
@@ -468,23 +457,7 @@ socket.on("friend:list", async () => {
     }
   });
 
-  socket.on("image:seen", async (msgId) => {
-    try {
-      const message = await Message.findById(msgId);
-      if (message && message.type === "image") {
-        await Message.findByIdAndDelete(msgId);
-        io.emit("message:deleted", msgId);
-      }
-    } catch (err) {
-      const idx = messages.findIndex(m => m.id === msgId || m._id === msgId);
-      if (idx !== -1) {
-        messages.splice(idx, 1);
-        io.emit("message:deleted", msgId);
-      }
-    }
-  });
-
-  socket.on("reaction:add", async ({ messageId, emoji }) => {
+socket.on("reaction:add", async ({ messageId, emoji }) => {
     try {
       const message = await Message.findById(messageId);
       if (message) {
